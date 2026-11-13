@@ -1,0 +1,90 @@
+services:
+  frontend:
+    build:
+      context: ./fin-track-v2-frontend
+    ports:
+      - "3010:3000"
+    env_file:
+      - ./fin-track-v2-frontend/.env
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      BACKEND_URL: http://backend:3001
+    volumes:
+      - ./fin-track-v2-frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+    networks:
+      - fin-track-v2
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - http
+      - http://frontend:3000
+      - --url=${NGROK_DOMAIN}
+    env_file:
+      - .env.ngrok
+    ports:
+      - "4050:4040"
+    depends_on:
+      - frontend
+    networks:
+      - fin-track-v2
+
+  backend:
+    build:
+      context: ./fin-track-v2-backend
+    ports:
+      - "4010:3001"
+    env_file:
+      - ./fin-track-v2-backend/.env
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: fintrack
+      DATABASE_PASSWORD: fintrack
+      DATABASE_NAME: fintrack
+      CHOKIDAR_USEPOLLING: "true"
+      TSC_WATCHFILE: UsePolling
+    volumes:
+      - ./fin-track-v2-backend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - fin-track-v2
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: fintrack
+      POSTGRES_PASSWORD: fintrack
+      POSTGRES_DB: fintrack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fintrack -d fintrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fin-track-v2
+
+volumes:
+  frontend_node_modules:
+  frontend_next:
+  backend_node_modules:
+  postgres_data:
+
+networks:
+  fin-track-v2:
+    driver: bridge
