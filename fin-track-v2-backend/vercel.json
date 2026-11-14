@@ -1,13 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "yarn build",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 60,
-      "includeFiles": "{dist/**,node_modules/pg/**,node_modules/pg-*/**}"
-    }
-  },
+  "buildCommand": "yarn migration:run",
   "builds": [{ "src": "api/index.ts", "use": "@vercel/node" }],
   "routes": [{ "src": "/(.*)", "dest": "api/index.ts" }]
 }
