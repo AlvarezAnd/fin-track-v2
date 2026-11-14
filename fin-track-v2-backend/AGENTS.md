@@ -10,7 +10,7 @@ OpenAPI comes from `@nestjs/swagger`. `main.ts` mounts Swagger UI at `/api` (JSO
 
 CORS is configured in `main.ts` with `enableCors`. `CORS_ORIGIN` is a comma-separated list of browser origins allowed to call the API. The default when unset is `http://localhost:3010` (Compose-mapped frontend). Server-side and non-browser callers are not subject to CORS.
 
-`@nestjs/authentication` issues the access token and the refresh token. The refresh token stays in the package's memory store, so a restart signs everyone out. `JWT_SECRET` must be at least 32 bytes. `@nestjs/authorization` checks permissions through `AccessPolicy` (`@Can` on routes). Import `AuthenticationModule` before `AuthorizationModule`. A handler with neither `@Can()`, `@Can.Anyone()` nor `@Public()` is denied. Token routes and `POST /auth/signup` are `@Public()`. Signup always creates the `user` role and ignores any requested role. `GET /auth/me` is `@Can.Anyone()` and returns `username`, `roles` and `permissions`.
+`@nestjs/authentication` issues the access token and the refresh token. `TypeOrmRefreshTokenStore` persists refresh tokens in PostgreSQL (`tokens_refresco` and `tokens_refresco_revocaciones`) and registers itself with `AuthenticationStorage` so production (Vercel/`NODE_ENV=production`) can start. Under `VITEST=true` it does not register, and the package keeps the in-memory store for tests. `JWT_SECRET` must be at least 32 bytes. `@nestjs/authorization` checks permissions through `AccessPolicy` (`@Can` on routes). Import `AuthenticationModule` before `AuthorizationModule`. A handler with neither `@Can()`, `@Can.Anyone()` nor `@Public()` is denied. Token routes and `POST /auth/signup` are `@Public()`. Signup always creates the `user` role and ignores any requested role. `GET /auth/me` is `@Can.Anyone()` and returns `username`, `roles` and `permissions`.
 
 When the database is connected, startup seeds permissions, the `admin`, `user` and `viewer` roles, and the user from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. The database assigns that user's numeric id. Passwords in `usuarios` are scrypt hashes from `PasswordHasher`. A changed env password is rehashed on the next boot. The bootstrap user is recognized by `ADMIN_USERNAME` and keeps the `admin` role. With `VITEST=true` the database is not initialized, and sign-in falls back to a timing-safe compare of the env credentials, still as an `admin` with every permission and id `1`.
 
@@ -25,6 +25,7 @@ Tables:
 - `transacciones`: amount, currency, the rate snapshot, calendar date, category and type. Rows keep `usuario_id`.
 - `cotizaciones`: units of a currency per 1 USD. `moneda` is unique. USD has no row.
 - `usuarios`, `roles`, `permisos`, `usuario_roles`, `rol_permisos`.
+- `tokens_refresco`, `tokens_refresco_revocaciones`: opaque refresh-token families for `@nestjs/authentication` (`RefreshTokenStore`).
 
 `usuarios`, `categorias`, `transacciones` and `cotizaciones` use a serial integer primary key. Route ids are parsed with `parseEntityId`; a non-numeric id is a 404 and does not hit the repository. JWT `sub` is `String(user.id)`.
 

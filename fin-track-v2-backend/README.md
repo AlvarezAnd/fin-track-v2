@@ -28,7 +28,7 @@ Con el proceso en marcha, la documentación OpenAPI (Swagger UI) está en `/api`
 
 ## Base de datos
 
-`synchronize` está apagado. Al arrancar, TypeORM ejecuta las migraciones pendientes de `src/database/migrations`. La inicial crea `tipos_transaccion`, `categorias`, `transacciones`, `usuarios`, `roles`, `permisos`, `usuario_roles` y `rol_permisos`, con el índice único `categorias_usuario_tipo_nombre`. La siguiente pasa los ids a enteros incrementales, agrega `moneda` y `cotizacion` en `transacciones`, y crea `cotizaciones`.
+`synchronize` está apagado. Al arrancar, TypeORM ejecuta las migraciones pendientes de `src/database/migrations`. La inicial crea `tipos_transaccion`, `categorias`, `transacciones`, `usuarios`, `roles`, `permisos`, `usuario_roles` y `rol_permisos`, con el índice único `categorias_usuario_tipo_nombre`. La siguiente pasa los ids a enteros incrementales, agrega `moneda` y `cotizacion` en `transacciones`, y crea `cotizaciones`. Otra crea `tokens_refresco` y `tokens_refresco_revocaciones` para los refresh tokens.
 
 ```bash
 yarn migration:show
@@ -49,7 +49,7 @@ Si la base ya tiene las tablas y no existe la tabla `migrations`, el arranque in
 
 ## Acceso
 
-`POST /auth/signup` es público, recibe `username` y `password`, y crea un usuario con el rol `user`. `POST /auth/token` recibe `username` y `password` y devuelve `access_token`, `refresh_token` y `expires_in`. `POST /auth/token/refresh` rota el refresh token. `POST /auth/token/revoke` lo revoca. El refresh token vive en memoria: reiniciar el proceso cierra las sesiones.
+`POST /auth/signup` es público, recibe `username` y `password`, y crea un usuario con el rol `user`. `POST /auth/token` recibe `username` y `password` y devuelve `access_token`, `refresh_token` y `expires_in`. `POST /auth/token/refresh` rota el refresh token. `POST /auth/token/revoke` lo revoca. Los refresh tokens se guardan en PostgreSQL (`tokens_refresco` / `tokens_refresco_revocaciones`), así sobreviven reinicios y varias instancias.
 
 `GET /auth/me` devuelve `username`, `roles` y `permissions`. `PATCH /auth/contrasena` lo puede llamar cualquier usuario autenticado. Recibe `actual` y `nueva`, toma el id de la sesión y responde 204. La contraseña actual incorrecta responde 400. Sin base responde 503.
 

@@ -83,7 +83,7 @@ Dentro de Compose, el frontend llama al backend por `http://backend:3001` y el b
 
 `ngrok` publica solo el frontend. El authtoken y el dominio van en `.env.ngrok` (`NGROK_AUTHTOKEN` y `NGROK_DOMAIN`), copiado desde `.env.ngrok.example`. Ese archivo no se versiona, y Compose lo lee con `--env-file` para armar `--url`. Dentro de la red el túnel entra a `http://frontend:3000`. El backend y PostgreSQL no salen por el túnel. La URL queda en `docker compose logs ngrok` y en http://localhost:4050.
 
-El refresh token vive en memoria. Reiniciar el backend cierra las sesiones abiertas.
+Los refresh tokens viven en PostgreSQL, así que un reinicio o varias instancias del backend siguen pudiendo renovar la sesión.
 
 ## Despliegue
 
