@@ -14,7 +14,7 @@ export function UserViewDialog({
   onClose: () => void;
 }) {
   const titleId = useId();
-  useDialogDismiss(onClose);
+  useDialogDismiss(onClose, true);
 
   return (
     <DialogOverlay onClose={onClose}>

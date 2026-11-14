@@ -28,7 +28,7 @@ Al ingresar, al cambiar de sección y al cargar los datos de cada pantalla se mu
 
 `/` redirige a `/login` desde `next.config.ts`. Con sesión, `/login` sigue hacia el resumen.
 
-En escritorio el encabezado lista las cinco secciones. En el teléfono la barra inferior muestra las cuatro primeras y el botón de alta. Configuración está en el menú de la sesión. En escritorio el historial muestra categoría, tipo, fecha, monto y acciones. En el teléfono muestra tipo, monto y un menú de tres puntos. El asistente, abajo a la derecha, envía el historial a `POST /api/asistente/chat` y muestra la respuesta en markdown. Si el backend pide el respaldo, responde con los registros del mes actual o del mes pasado.
+En escritorio la navegación va en un sidebar a la izquierda (las cinco secciones); la cabecera queda para la sesión. En el teléfono la barra inferior muestra las cuatro primeras y el botón de alta. Configuración está en el menú de la sesión. En escritorio el historial muestra categoría, tipo, fecha, monto y acciones. En el teléfono muestra tipo, monto y un menú de tres puntos. El asistente, abajo a la derecha, envía el historial a `POST /api/asistente/chat` y muestra la respuesta en markdown. Si el backend pide el respaldo, responde con los registros del mes actual o del mes pasado.
 
 ## Sesión y preferencias
 

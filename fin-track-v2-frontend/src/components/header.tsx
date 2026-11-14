@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { logout } from "@/app/dashboard/actions";
 import { Button } from "@/components/button";
 import { beginRouteLoading } from "@/components/navigation-loading";
-import { NAV_ITEMS } from "@/components/nav-items";
 import { applyTheme, subscribeTheme, type Theme } from "@/lib/theme";
 
 const APP_NAME = "Fin Track";
@@ -14,12 +12,7 @@ const APP_NAME = "Fin Track";
 const menuItemClassName =
   "flex w-full cursor-pointer px-3 py-2.5 text-left text-sm text-foreground hover:bg-black/[.04] dark:hover:bg-white/[.06]";
 
-function isCurrent(pathname: string, href: string, exact: boolean) {
-  return exact ? pathname === href : pathname.startsWith(href);
-}
-
 export function Header({ username }: { username: string }) {
-  const pathname = usePathname();
   const router = useRouter();
   const menuId = useId();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -71,27 +64,11 @@ export function Header({ username }: { username: string }) {
 
   return (
     <header className="border-b border-black/10 pt-[env(safe-area-inset-top)] dark:border-white/10">
-      <div className="mx-auto grid min-h-14 w-full max-w-5xl grid-cols-[1fr_auto] items-center gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:min-h-16 sm:px-6 xl:grid-cols-[1fr_auto_1fr]">
-        <p className="text-base font-semibold tracking-tight">{APP_NAME}</p>
-        <nav
-          aria-label="Secciones"
-          className="col-start-2 hidden items-center justify-center gap-1 xl:flex"
-        >
-          {NAV_ITEMS.map((item) => {
-            const current = isCurrent(pathname, item.href, item.exact);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={current ? "page" : undefined}
-                className={`rounded-full px-3 py-2 text-sm ${current ? "bg-black/[.06] font-medium dark:bg-white/[.08]" : "text-zinc-600 hover:bg-black/[.04] dark:text-zinc-300 dark:hover:bg-white/[.06]"}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="relative justify-self-end xl:col-start-3" ref={menuRef}>
+      <div className="mx-auto flex min-h-14 w-full max-w-5xl items-center justify-between gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:min-h-16 sm:px-6 xl:ml-0 xl:max-w-none xl:justify-end">
+        <p className="text-base font-semibold tracking-tight xl:hidden">
+          {APP_NAME}
+        </p>
+        <div className="relative" ref={menuRef}>
           <Button
             variant="egreso"
             className="max-w-[12rem] sm:max-w-none"

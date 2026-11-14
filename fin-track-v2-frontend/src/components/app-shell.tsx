@@ -7,6 +7,7 @@ import { Chatbot } from "@/components/chatbot";
 import { DisplaySettingsProvider } from "@/components/display-settings";
 import { Header } from "@/components/header";
 import { MovementDialog, type MovementDraft } from "@/components/movement-dialog";
+import { Sidebar } from "@/components/sidebar";
 import type { Movimiento, TipoMovimiento } from "@/lib/finance";
 
 type MovementContextValue = {
@@ -92,13 +93,16 @@ export function AppShell({
         revision,
       }}
     >
-      <div className="flex flex-1 flex-col">
-        <Header username={username} />
-        <div className="flex flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] xl:pb-0">
-          {children}
+      <div className="flex flex-1">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Header username={username} />
+          <div className="flex flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] xl:pb-0">
+            {children}
+          </div>
+          <BottomNav onCreate={() => openMovement("egreso")} />
+          <Chatbot />
         </div>
-        <BottomNav onCreate={() => openMovement("egreso")} />
-        <Chatbot />
       </div>
       {draft ? (
         <MovementDialog
