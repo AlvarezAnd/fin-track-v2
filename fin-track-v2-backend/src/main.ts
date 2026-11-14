@@ -3,6 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { loadEnvFile } from 'node:process';
 import { AppModule, ObserveInstrument } from './app.module.js';
+import 'pg';
 
 try {
   loadEnvFile();
