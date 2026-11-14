@@ -15,12 +15,14 @@ yarn start:dev
 
 `yarn start` arranca una vez. `yarn start:prod` corre el build de `yarn build`.
 
+Con el proceso en marcha, la documentación OpenAPI (Swagger UI) está en `/api` y el JSON en `/api-json`. En local: http://localhost:3001/api (o http://localhost:4010/api con Compose). En Authorize pegá el `access_token` de `POST /auth/token`.
+
 ## Variables
 
 - `ADMIN_USERNAME` y `ADMIN_PASSWORD`: administrador inicial. Con la base conectada se guarda con un id numérico y el rol `admin`.
 - `JWT_SECRET`: al menos 32 bytes.
 - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`.
-- `CORS_ORIGIN`: origen del frontend.
+- `CORS_ORIGIN`: orígenes del navegador permitidos para llamar a la API (lista separada por comas: esquema + host + puerto). Sin la variable, solo `http://localhost:3010`. No afecta a clientes sin navegador ni a llamadas same-origin.
 - `OBSERVE_APP_KEY` y `OBSERVE_APP_SECRET`: NestJS Observe. `npx @nestjs/observe link` los escribe en `.env`.
 - `LLM_API_KEY`, `LLM_BASE_URL` y `LLM_MODEL`: chat compatible con OpenAI. El valor de desarrollo es `https://api.groq.com/openai/v1` y `openai/gpt-oss-120b`. La clave queda vacía hasta configurarla.
 

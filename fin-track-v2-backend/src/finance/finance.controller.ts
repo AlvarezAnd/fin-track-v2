@@ -15,10 +15,13 @@ import {
 import type { Request } from 'express';
 import { CurrentUser } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { AppUser } from '../users/app-user.js';
 import { AccessPolicy } from '../users/access.policy.js';
 import { FinanceService } from './finance.service.js';
 
+@ApiTags('finanzas')
+@ApiBearerAuth()
 @Controller()
 export class FinanceController {
   constructor(private readonly finance: FinanceService) {}

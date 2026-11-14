@@ -6,6 +6,10 @@ This package is the API of Fin Track, a personal-finance app with a Spanish UI. 
 
 Method names are English. HTTP paths and JSON fields stay Spanish (`tipo`, `monto`, `categoria`, `fecha`, `icono`, `/categorias`, `/transacciones`, `/usuarios`). Each database entity has a repository in its module. Services own validation, HTTP exceptions and transactions. Relative imports end in `.js`.
 
+OpenAPI comes from `@nestjs/swagger`. `main.ts` mounts Swagger UI at `/api` (JSON at `/api-json`) with Bearer auth. Controllers use `@ApiTags(...)`; authenticated ones also use `@ApiBearerAuth()`. Keep tags and bearer in sync when you add a controller.
+
+CORS is configured in `main.ts` with `enableCors`. `CORS_ORIGIN` is a comma-separated list of browser origins allowed to call the API. The default when unset is `http://localhost:3010` (Compose-mapped frontend). Server-side and non-browser callers are not subject to CORS.
+
 `@nestjs/authentication` issues the access token and the refresh token. The refresh token stays in the package's memory store, so a restart signs everyone out. `JWT_SECRET` must be at least 32 bytes. `@nestjs/authorization` checks permissions through `AccessPolicy` (`@Can` on routes). Import `AuthenticationModule` before `AuthorizationModule`. A handler with neither `@Can()`, `@Can.Anyone()` nor `@Public()` is denied. Token routes and `POST /auth/signup` are `@Public()`. Signup always creates the `user` role and ignores any requested role. `GET /auth/me` is `@Can.Anyone()` and returns `username`, `roles` and `permissions`.
 
 When the database is connected, startup seeds permissions, the `admin`, `user` and `viewer` roles, and the user from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. The database assigns that user's numeric id. Passwords in `usuarios` are scrypt hashes from `PasswordHasher`. A changed env password is rehashed on the next boot. The bootstrap user is recognized by `ADMIN_USERNAME` and keeps the `admin` role. With `VITEST=true` the database is not initialized, and sign-in falls back to a timing-safe compare of the env credentials, still as an `admin` with every permission and id `1`.

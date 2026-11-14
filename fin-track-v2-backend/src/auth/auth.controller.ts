@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { CurrentUser, Public, TokenService } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { AppUser } from '../users/app-user.js';
 import { UsersService } from '../users/users.service.js';
 import { CredentialsService } from './credentials.service.js';
@@ -32,6 +33,7 @@ function issuedTokens(tokens: {
   };
 }
 
+@ApiTags('auth')
 @Public()
 @Controller('auth/token')
 export class AuthController {
@@ -88,6 +90,7 @@ export class AuthController {
   }
 }
 
+@ApiTags('auth')
 @Public()
 @Controller('auth')
 export class AuthSignupController {
@@ -100,6 +103,8 @@ export class AuthSignupController {
   }
 }
 
+@ApiTags('auth')
+@ApiBearerAuth()
 @Controller('auth')
 export class AuthPasswordController {
   constructor(private readonly users: UsersService) {}
@@ -115,6 +120,8 @@ export class AuthPasswordController {
   }
 }
 
+@ApiTags('auth')
+@ApiBearerAuth()
 @Controller('auth')
 export class AuthMeController {
   @Get('me')

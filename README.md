@@ -75,6 +75,7 @@ Eso construye y arranca los servicios. `make be` levanta solo el backend y Postg
 | --- | --- |
 | Frontend | http://localhost:3010 |
 | Backend | http://localhost:4010 |
+| Swagger (API) | http://localhost:4010/api |
 | PostgreSQL | localhost:5432 |
 | Túnel de ngrok | La URL pública sale en los logs de `ngrok` y en http://localhost:4050 |
 
@@ -103,7 +104,7 @@ El backend lee:
 
 - `ADMIN_USERNAME` y `ADMIN_PASSWORD`, el administrador inicial.
 - `JWT_SECRET`, de al menos 32 bytes, para firmar el access token.
-- `CORS_ORIGIN`, el origen permitido del frontend.
+- `CORS_ORIGIN`, orígenes del navegador permitidos para la API (separados por coma). Por defecto `http://localhost:3010`.
 - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD` y `DATABASE_NAME`.
 - `OBSERVE_APP_KEY` y `OBSERVE_APP_SECRET`, el par de NestJS Observe.
 - `LLM_API_KEY`, `LLM_BASE_URL` y `LLM_MODEL`. Con las tres, `POST /asistente/chat` llama a un chat compatible con OpenAI (por defecto Groq y `openai/gpt-oss-120b`). Cambiar de proveedor es cambiar esas tres variables. Sin clave, o si el proveedor falla, el asistente usa las respuestas locales. Un 429 se muestra como “El asistente está ocupado, intenta en un minuto.”

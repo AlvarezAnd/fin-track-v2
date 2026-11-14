@@ -67,8 +67,13 @@ export function Chatbot() {
       }
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   async function enviar(pregunta: string) {
@@ -115,7 +120,8 @@ export function Chatbot() {
           id={panelId}
           role="dialog"
           aria-label="Asistente"
-          className="flex max-h-[min(32rem,calc(100dvh-9rem))] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-black/10 bg-background shadow-xl dark:border-white/15"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex h-dvh w-full flex-col overflow-hidden border-0 bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:static sm:z-auto sm:h-auto sm:max-h-[min(32rem,calc(100dvh-9rem))] sm:w-[min(22rem,calc(100vw-2rem))] sm:rounded-2xl sm:border sm:border-black/10 sm:pt-0 sm:pb-0 sm:shadow-xl dark:sm:border-white/15"
         >
           <header className="flex items-center justify-between gap-3 border-b border-black/10 px-4 py-3 dark:border-white/10">
             <div>
@@ -200,7 +206,7 @@ export function Chatbot() {
         aria-controls={panelId}
         aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
         onClick={() => setOpen((actual) => !actual)}
-        className="flex size-14 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-lg"
+        className={`size-14 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-lg ${open ? "hidden sm:flex" : "flex"}`}
       >
         {open ? <CloseIcon className="size-6" /> : <ChatIcon />}
       </button>
