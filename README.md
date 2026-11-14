@@ -87,6 +87,8 @@ Los refresh tokens viven en PostgreSQL, así que un reinicio o varias instancias
 
 ## Despliegue
 
+El backend también puede ir a Vercel como Function: en `fin-track-v2-backend`, `api/index.ts` monta Nest sobre Express y exporta el handler `(req, res)`; `vercel.json` reescribe el tráfico a esa entrada. El Root Directory del proyecto tiene que ser `fin-track-v2-backend`. Las variables (`DATABASE_*`, `JWT_SECRET`, etc.) se cargan en el panel de Vercel; `.env.prod` no se sube.
+
 `make deploy` copia esta carpeta a un servidor propio, incluido `.env.ngrok`, reconstruye las imágenes de frontend y backend (`docker compose build --pull`) y vuelve a crear sus contenedores, también el de ngrok. Renueva los volúmenes de `node_modules` y `.next`, y conserva el de PostgreSQL. El servidor necesita OpenSSH, Docker con el plugin Compose, y un usuario que pueda usar `docker`. La primera vez el comando solo crea la clave.
 
 1. Copiá `.env.deploy.example` a `.env.deploy` y completá `DEPLOY_HOST` y `DEPLOY_USER`. `DEPLOY_PORT` es 22 si no se indica. El destino remoto es `~/apps/fin-track`; `REMOTE_DIR` lo cambia, siempre como ruta relativa al home.

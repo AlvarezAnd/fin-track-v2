@@ -15,6 +15,8 @@ yarn start:dev
 
 `yarn start` arranca una vez. `yarn start:prod` corre el build de `yarn build`.
 
+El bootstrap compartido está en `src/create-app.ts`. En local y Docker, `src/main.ts` llama `listen`. En Vercel, `api/index.ts` crea un Express, lo pasa a `createNestApp(server)`, hace `init` una vez por isolate cálido y exporta `(req, res) => server(req, res)` (sin `listen`). `vercel.json` reescribe todas las rutas a esa Function. El Root Directory del proyecto en Vercel debe ser `fin-track-v2-backend`, y el build es `yarn build` (el handler importa desde `dist/`).
+
 Con el proceso en marcha, la documentación OpenAPI (Swagger UI) está en `/api` y el JSON en `/api-json`. En local: http://localhost:3001/api (o http://localhost:4010/api con Compose). En Authorize pegá el `access_token` de `POST /auth/token`.
 
 ## Variables
