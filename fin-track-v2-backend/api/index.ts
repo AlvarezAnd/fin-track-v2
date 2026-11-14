@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import express from 'express';
-import { createNestApp } from '../dist/create-app.js';
+import { createNestApp } from '../src/create-app.js';
 
 const server = express();
 let cached: typeof server | undefined;
