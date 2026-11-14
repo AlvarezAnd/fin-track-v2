@@ -7,5 +7,7 @@
       "maxDuration": 60,
       "includeFiles": "{dist/**,node_modules/pg/**,node_modules/pg-*/**}"
     }
-  }
+  },
+  "builds": [{ "src": "api/index.ts", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "api/index.ts" }]
 }
