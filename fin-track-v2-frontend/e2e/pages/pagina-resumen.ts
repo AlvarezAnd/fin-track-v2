@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { ListaMovimientos } from "./lista-movimientos";
 
+const SIN_CATEGORIA = "Sin categoría";
+
 export class PaginaResumen {
   readonly lista: ListaMovimientos;
 
@@ -15,12 +17,33 @@ export class PaginaResumen {
     await expect(this.page.getByRole("heading", { name: "Egresos" })).toBeVisible();
   }
 
+  async asegurarCategoria(tipo: "Ingreso" | "Egreso", categoria: string) {
+    if (categoria === SIN_CATEGORIA) {
+      return;
+    }
+
+    const response = await this.page.request.post("/api/finanzas", {
+      data: {
+        tipo: tipo === "Ingreso" ? "ingreso" : "egreso",
+        monto: "0,01",
+        categoria,
+        fecha: "1970-01-02",
+        moneda: "USD",
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = (await response.json()) as { id: number };
+    const deleted = await this.page.request.delete(`/api/finanzas/${body.id}`);
+    expect(deleted.ok()).toBeTruthy();
+  }
+
   async registrar(tipo: "Ingreso" | "Egreso", categoria: string, monto: string) {
+    await this.asegurarCategoria(tipo, categoria);
     await this.page.getByRole("button", { name: tipo, exact: true }).click();
     const dialog = this.page.getByRole("dialog", { name: "Nuevo movimiento" });
     await expect(dialog.getByRole("button", { name: tipo, pressed: true })).toBeVisible();
     await dialog.getByLabel("Monto").fill(monto);
-    await dialog.getByLabel("Categoría").fill(categoria);
+    await dialog.getByLabel("Categoría").selectOption(categoria);
     await completarCambio(dialog);
     await dialog.getByRole("button", { name: "Registrar" }).click();
     await expect(dialog).toBeHidden();

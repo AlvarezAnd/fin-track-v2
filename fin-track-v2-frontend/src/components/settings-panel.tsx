@@ -9,6 +9,7 @@ import { MonedaSelect } from "@/components/moneda-select";
 import { Section } from "@/components/section";
 import { SETTINGS_CARD_CLASS } from "@/components/settings-styles";
 import { Tabs } from "@/components/tabs";
+import { UsersAdminCard } from "@/components/users-admin-card";
 import { applyTheme, readTheme, subscribeTheme, type Theme } from "@/lib/theme";
 import { MONEDAS, type Moneda } from "@/lib/display";
 
@@ -63,6 +64,7 @@ export function SettingsPanel() {
         </div>
       </section>
       <ContrasenaCard />
+      {administrador ? <UsersAdminCard /> : null}
       <section className={SETTINGS_CARD_CLASS} aria-labelledby="moneda-mostrar">
         <h2 id="moneda-mostrar" className="text-base font-semibold">
           Moneda para mostrar

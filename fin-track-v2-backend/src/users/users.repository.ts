@@ -39,4 +39,8 @@ export class UsersRepository {
   }) {
     return this.users.save(this.users.create(data));
   }
+
+  remove(user: User) {
+    return this.users.remove(user);
+  }
 }

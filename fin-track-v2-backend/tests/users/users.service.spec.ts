@@ -28,13 +28,17 @@ function user(partial: Partial<User> = {}): User {
 }
 
 function serviceWith(initialized = false) {
-  const dataSource = { isInitialized: initialized };
+  const dataSource = {
+    isInitialized: initialized,
+    query: vi.fn(async () => []),
+  };
   const users = {
     list: vi.fn(),
     findById: vi.fn(),
     findByUsername: vi.fn(),
     save: vi.fn(async (value: User) => value),
     create: vi.fn(async (value: User) => value),
+    remove: vi.fn(async (value: User) => value),
   };
   const roles = {
     list: vi.fn(),
@@ -59,7 +63,7 @@ function serviceWith(initialized = false) {
     hasher as unknown as PasswordHasher,
   );
 
-  return { service, users, roles, permissions, hasher };
+  return { service, users, roles, permissions, hasher, dataSource };
 }
 
 describe('UsersService', () => {
@@ -273,5 +277,40 @@ describe('UsersService', () => {
     await expect(service.setRoles('1', { roles: ['viewer'] })).rejects.toBeInstanceOf(ConflictException);
     users.findById.mockResolvedValue(null);
     await expect(service.setRoles('missing', { roles: ['viewer'] })).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('removes a user without finance data', async () => {
+    const existing = user({ id: 3, username: 'visita' });
+    const { service, users, dataSource } = serviceWith(true);
+    users.findById.mockResolvedValue(existing);
+
+    await service.remove('3', { id: 1 });
+
+    expect(dataSource.query).toHaveBeenCalledTimes(2);
+    expect(users.remove).toHaveBeenCalledWith(existing);
+  });
+
+  it('refuses to remove yourself, the bootstrap admin, or a user with data', async () => {
+    const { service, users, dataSource } = serviceWith(true);
+    const existing = user({ id: 2, username: 'visita' });
+    users.findById.mockResolvedValue(existing);
+
+    await expect(service.remove('2', { id: 2 })).rejects.toBeInstanceOf(ConflictException);
+
+    vi.stubEnv('ADMIN_USERNAME', 'visita');
+    await expect(service.remove('2', { id: 1 })).rejects.toBeInstanceOf(ConflictException);
+
+    vi.unstubAllEnvs();
+    dataSource.query.mockResolvedValueOnce([{ ok: 1 }]);
+    await expect(service.remove('2', { id: 1 })).rejects.toBeInstanceOf(ConflictException);
+    expect(users.remove).not.toHaveBeenCalled();
+
+    users.findById.mockResolvedValue(null);
+    await expect(service.remove('9', { id: 1 })).rejects.toBeInstanceOf(NotFoundException);
+
+    const offline = serviceWith(false);
+    await expect(offline.service.remove('2', { id: 1 })).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
   });
 });

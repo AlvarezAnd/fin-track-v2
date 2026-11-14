@@ -153,6 +153,44 @@ export class UsersService implements OnModuleInit {
     return presentUser(await this.users.save(user));
   }
 
+  async remove(id: string, actor: { id: number }) {
+    if (!this.dataSource.isInitialized) {
+      throw new ServiceUnavailableException('La eliminación de usuarios no está disponible.');
+    }
+
+    const userId = parseEntityId(id);
+    const user = userId ? await this.users.findById(userId) : null;
+
+    if (!user) {
+      throw new NotFoundException('El usuario no existe.');
+    }
+
+    if (user.id === actor.id) {
+      throw new ConflictException('No podés eliminar tu propio usuario.');
+    }
+
+    if (user.username === adminUsername()) {
+      throw new ConflictException('No se puede eliminar el administrador inicial.');
+    }
+
+    const movimientos = (await this.dataSource.query(
+      `SELECT 1 AS ok FROM transacciones WHERE usuario_id = $1 LIMIT 1`,
+      [user.id],
+    )) as unknown[];
+    const categorias = (await this.dataSource.query(
+      `SELECT 1 AS ok FROM categorias WHERE usuario_id = $1 LIMIT 1`,
+      [user.id],
+    )) as unknown[];
+
+    if (movimientos.length > 0 || categorias.length > 0) {
+      throw new ConflictException(
+        'No se puede eliminar un usuario con movimientos o categorías.',
+      );
+    }
+
+    await this.users.remove(user);
+  }
+
   private async requireRoles(codes: string[]) {
     if (!codes.length) {
       throw new BadRequestException('El rol no es válido.');

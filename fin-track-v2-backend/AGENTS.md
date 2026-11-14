@@ -37,7 +37,7 @@ Finance routes require `finance.read` or `finance.write`: `GET /tipos-transaccio
 
 `PATCH /auth/contrasena` uses `@Can.Anyone()`. The user id comes from the session. The body is `actual` and `nueva`. A wrong current password is 400, not 401. Without a database it returns 503. The new hash is stored with `PasswordHasher`. Restarting still rehashes the bootstrap admin from `ADMIN_PASSWORD` when that env value no longer matches.
 
-User routes: `GET /usuarios`, `POST /usuarios` (`username`, `password`, optional `roles`; default role `viewer`), `PATCH /usuarios/:id` (`roles`), `GET /roles` and `GET /permisos`. Reads need `users.read`. Creates and role changes need `users.manage`. User payloads omit the password hash.
+User routes: `GET /usuarios`, `POST /usuarios` (`username`, `password`, optional `roles`; default role `viewer`), `PATCH /usuarios/:id` (`roles`), `DELETE /usuarios/:id` (204), `GET /roles` and `GET /permisos`. Reads need `users.read`. Creates, role changes and deletes need `users.manage`. Delete refuses the signed-in user, the `ADMIN_USERNAME` bootstrap account, and any user that still has rows in `transacciones` or `categorias` (409). User payloads omit the password hash.
 
 ## NestJS
 

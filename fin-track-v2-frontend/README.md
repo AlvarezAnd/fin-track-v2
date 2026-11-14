@@ -24,7 +24,7 @@ Al ingresar, al cambiar de sección y al cargar los datos de cada pantalla se mu
 | `/dashboard/movimientos` | Historial, búsqueda y filtro por tipo y categoría. Junto al título, Importar baja un Excel de formato y sube movimientos, Nuevo abre el alta y Exportar descarga todos los movimientos hasta hoy en CSV, Excel o PDF. |
 | `/dashboard/categorias` | Categorías filtradas por Todo, Egresos o Ingresos. El nombre y el icono se editan; se borra si no tiene movimientos. |
 | `/dashboard/estadisticas` | Totales y gráficos por día, mes, tres meses, seis meses o año. El período está junto al título. |
-| `/dashboard/configuracion` | Cambio de la contraseña propia, tema claro, oscuro o el del sistema, moneda de visualización y cambios. Solo el administrador guarda un cambio. |
+| `/dashboard/configuracion` | Cambio de la contraseña propia, tema claro, oscuro o el del sistema, moneda de visualización y cambios. Solo el administrador guarda un cambio y gestiona usuarios (buscador, tabla, ver / editar roles / eliminar). |
 
 `/` redirige a `/login` desde `next.config.ts`. Con sesión, `/login` sigue hacia el resumen.
 

@@ -24,7 +24,9 @@ import {
 } from "@/lib/finance";
 
 const inputClassName =
-  "h-12 rounded-lg border border-black/10 bg-transparent px-3 text-base font-normal outline-none focus:border-foreground sm:h-11 dark:border-white/15";
+  "h-12 rounded-lg border border-black/10 bg-background px-3 text-base font-normal outline-none focus:border-foreground sm:h-11 dark:border-white/15";
+
+export const SIN_CATEGORIA = "Sin categoría";
 
 export type MovementDraft =
   | { mode: "create"; tipo: TipoMovimiento }
@@ -48,21 +50,23 @@ export function MovementDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { recargarCambios } = useDisplaySettings();
+  const { preferencias, recargarCambios } = useDisplaySettings();
   const titleId = useId();
-  const listId = useId();
   const editing = draft.mode === "edit";
   const [tipo, setTipo] = useState<TipoMovimiento>(
     editing ? draft.movimiento.tipo : draft.tipo,
   );
   const [monto, setMonto] = useState(editing ? montoInicial(draft.movimiento.monto) : "");
-  const [moneda, setMoneda] = useState<Moneda>(editing ? draft.movimiento.moneda : "USD");
+  const [moneda, setMoneda] = useState<Moneda>(
+    editing ? draft.movimiento.moneda : preferencias.moneda,
+  );
   const [cambio, setCambio] = useState("");
   const [cotizaciones, setCotizaciones] = useState<Record<string, number>>({});
-  const [categoria, setCategoria] = useState(editing ? draft.movimiento.categoria : "");
+  const [categoria, setCategoria] = useState(
+    editing ? draft.movimiento.categoria : SIN_CATEGORIA,
+  );
   const [fecha, setFecha] = useState(editing ? draft.movimiento.fecha : fechaLocal());
   const [icono, setIcono] = useState(editing ? draft.movimiento.icono : "etiqueta");
-  const [iconTouched, setIconTouched] = useState(editing);
   const [categorias, setCategorias] = useState<Record<TipoMovimiento, CategoriaResumen[]>>({
     ingreso: [],
     egreso: [],
@@ -70,6 +74,8 @@ export function MovementDialog({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const titulo = editing ? "Editar movimiento" : "Nuevo movimiento";
+  const sinCategoria = categoria === SIN_CATEGORIA;
+  const opcionesCategoria = opcionesDe(categorias[tipo], editing ? draft.movimiento.categoria : null);
 
   useEffect(() => {
     let active = true;
@@ -133,14 +139,32 @@ export function MovementDialog({
     };
   }, [onClose, pending]);
 
-  function applyCategoria(value: string, nextTipo = tipo) {
-    setCategoria(value);
+  function chooseTipo(next: TipoMovimiento) {
+    setTipo(next);
 
-    if (iconTouched) {
+    if (categoria === SIN_CATEGORIA) {
       return;
     }
 
-    const match = categorias[nextTipo].find(
+    const existe = categorias[next].some(
+      (item) => item.nombre.toLocaleLowerCase("es-AR") === categoria.toLocaleLowerCase("es-AR"),
+    );
+
+    if (!existe) {
+      setCategoria(SIN_CATEGORIA);
+      setIcono("etiqueta");
+    }
+  }
+
+  function chooseCategoria(value: string) {
+    setCategoria(value);
+
+    if (value === SIN_CATEGORIA) {
+      setIcono("etiqueta");
+      return;
+    }
+
+    const match = categorias[tipo].find(
       (item) => item.nombre.toLocaleLowerCase("es-AR") === value.toLocaleLowerCase("es-AR"),
     );
     setIcono(match?.icono ?? suggestCategoryIcon(value));
@@ -254,7 +278,7 @@ export function MovementDialog({
           <Tabs
             label="Tipo de movimiento"
             value={tipo}
-            onChange={setTipo}
+            onChange={chooseTipo}
             disabled={pending}
             options={[
               {
@@ -346,34 +370,31 @@ export function MovementDialog({
           </label>
           <label className="flex flex-col gap-2 text-sm font-medium">
             Categoría
-            <input
+            <select
               name="categoria"
-              type="text"
-              list={listId}
-              autoComplete="off"
-              required
-              maxLength={80}
               value={categoria}
-              onChange={(event) => applyCategoria(event.target.value)}
-              className={inputClassName}
-            />
-            <datalist id={listId}>
-              {categorias[tipo].map((item) => (
-                <option key={item.nombre} value={item.nombre} />
-              ))}
-            </datalist>
-          </label>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Icono</p>
-            <IconPicker
-              value={icono}
               disabled={pending}
-              onChange={(name) => {
-                setIconTouched(true);
-                setIcono(name);
-              }}
-            />
-          </div>
+              onChange={(event) => chooseCategoria(event.target.value)}
+              className={inputClassName}
+            >
+              <option value={SIN_CATEGORIA}>{SIN_CATEGORIA}</option>
+              {opcionesCategoria.map((item) => (
+                <option key={item.nombre} value={item.nombre}>
+                  {item.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+          {sinCategoria ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">Icono</p>
+              <IconPicker
+                value={icono}
+                disabled={pending}
+                onChange={setIcono}
+              />
+            </div>
+          ) : null}
           {error ? (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">
               {error}
@@ -395,4 +416,23 @@ export function MovementDialog({
       </div>
     </div>
   );
+}
+
+function opcionesDe(listadas: CategoriaResumen[], actual: string | null) {
+  const sinClave = SIN_CATEGORIA.toLocaleLowerCase("es-AR");
+  const opciones = listadas.filter(
+    (item) => item.nombre.toLocaleLowerCase("es-AR") !== sinClave,
+  );
+
+  if (
+    actual &&
+    actual.toLocaleLowerCase("es-AR") !== sinClave &&
+    !opciones.some(
+      (item) => item.nombre.toLocaleLowerCase("es-AR") === actual.toLocaleLowerCase("es-AR"),
+    )
+  ) {
+    return [{ nombre: actual, icono: "etiqueta" }, ...opciones];
+  }
+
+  return opciones;
 }

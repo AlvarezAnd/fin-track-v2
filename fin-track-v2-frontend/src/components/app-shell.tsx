@@ -18,9 +18,14 @@ type MovementContextValue = {
 
 const MovementContext = createContext<MovementContextValue | null>(null);
 const AdminContext = createContext(false);
+const UsernameContext = createContext("");
 
 export function useAdministrador() {
   return useContext(AdminContext);
+}
+
+export function useSessionUsername() {
+  return useContext(UsernameContext);
 }
 
 export function useMovement() {
@@ -77,6 +82,7 @@ export function AppShell({
 
   return (
     <DisplaySettingsProvider>
+    <UsernameContext.Provider value={username}>
     <AdminContext.Provider value={administrador}>
     <MovementContext.Provider
       value={{
@@ -107,6 +113,7 @@ export function AppShell({
       ) : null}
     </MovementContext.Provider>
     </AdminContext.Provider>
+    </UsernameContext.Provider>
     </DisplaySettingsProvider>
   );
 }

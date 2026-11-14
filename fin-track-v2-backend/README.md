@@ -75,6 +75,7 @@ Permisos: `finance.read`, `finance.write`, `users.read`, `users.manage`. El rol 
 | `GET /usuarios` | `users.read` | |
 | `POST /usuarios` | `users.manage` | `username`, `password`, `roles` opcional |
 | `PATCH /usuarios/:id` | `users.manage` | `roles` |
+| `DELETE /usuarios/:id` | `users.manage` | 204. 409 si es el admin inicial, el propio usuario o tiene movimientos/categorías |
 | `GET /roles` | `users.read` | |
 | `GET /permisos` | `users.read` | |
 | `PATCH /auth/contrasena` | sesión | `{ "actual", "nueva" }`. 204. 400 si la actual no coincide |
