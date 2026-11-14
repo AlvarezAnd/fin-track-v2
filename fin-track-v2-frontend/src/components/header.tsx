@@ -71,7 +71,7 @@ export function Header({ username }: { username: string }) {
         <div className="relative" ref={menuRef}>
           <Button
             variant="egreso"
-            className="max-w-[12rem] sm:max-w-none"
+            className="max-w-[12rem] !border-transparent sm:max-w-none xl:!border-black/10 dark:!border-transparent dark:xl:!border-white/15"
             aria-haspopup="menu"
             aria-expanded={open}
             aria-controls={menuId}

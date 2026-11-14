@@ -6,6 +6,7 @@ import { formatDesdeUsd, preferenciasIniciales, readPreferencias, writePreferenc
 type DisplaySettingsValue = {
   preferencias: Preferencias;
   cambios: Record<string, number>;
+  cambiosCargados: boolean;
   guardar: (preferencias: Preferencias) => void;
   recargarCambios: () => Promise<void>;
   format: (usd: number) => string;
@@ -32,12 +33,15 @@ async function leerCambios() {
 export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
   const [preferencias, setPreferencias] = useState<Preferencias>(preferenciasIniciales);
   const [cambios, setCambios] = useState<Record<string, number>>({});
+  const [cambiosCargados, setCambiosCargados] = useState(false);
 
   const recargarCambios = useCallback(async () => {
     try {
       setCambios(await leerCambios());
     } catch {
       setCambios({});
+    } finally {
+      setCambiosCargados(true);
     }
   }, []);
 
@@ -56,6 +60,7 @@ export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
       value={{
         preferencias,
         cambios,
+        cambiosCargados,
         guardar,
         recargarCambios,
         format: (value) => formatDesdeUsd(value, preferencias.moneda, cambios),

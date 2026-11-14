@@ -16,7 +16,7 @@ La interfaz está en español y se usa en teléfono, tablet y escritorio. La tip
 - En Configuración, cambiar la contraseña propia, elegir tema claro, oscuro o el del sistema, y la moneda en la que se muestran los totales. Cada movimiento queda en su moneda. Los totales están en dólares y se convierten con el cambio cargado; si esa moneda no tiene cambio, los totales se ven en dólares. El dólar es la referencia: un cambio dice cuántas unidades de la otra moneda equivalen a 1 USD. Solo el administrador puede modificar los cambios y gestionar usuarios registrados (buscar, ver, editar roles y eliminar). El tema y la moneda de visualización quedan en el navegador.
 - Cerrar la sesión desde el menú del usuario.
 
-En escritorio el menú superior lista Resumen, Movimientos, Categorías, Estadísticas y Configuración. En el teléfono la barra inferior muestra las cuatro primeras y el botón para cargar un movimiento. Configuración, en esa pantalla, está en el menú de la sesión.
+En escritorio la navegación va en un sidebar a la izquierda (Resumen, Movimientos, Categorías, Estadísticas y Configuración). En el teléfono la barra inferior muestra las cuatro primeras y el botón para cargar un movimiento. Configuración, en esa pantalla, está en el menú de la sesión.
 
 ## Usuarios, roles y permisos
 

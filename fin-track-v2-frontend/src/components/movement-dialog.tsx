@@ -50,7 +50,7 @@ export function MovementDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { preferencias, recargarCambios } = useDisplaySettings();
+  const { preferencias, cambios, cambiosCargados, recargarCambios } = useDisplaySettings();
   const titleId = useId();
   const editing = draft.mode === "edit";
   const [tipo, setTipo] = useState<TipoMovimiento>(
@@ -61,7 +61,6 @@ export function MovementDialog({
     editing ? draft.movimiento.moneda : preferencias.moneda,
   );
   const [cambio, setCambio] = useState("");
-  const [cotizaciones, setCotizaciones] = useState<Record<string, number>>({});
   const [categoria, setCategoria] = useState(
     editing ? draft.movimiento.categoria : SIN_CATEGORIA,
   );
@@ -76,6 +75,7 @@ export function MovementDialog({
   const titulo = editing ? "Editar movimiento" : "Nuevo movimiento";
   const sinCategoria = categoria === SIN_CATEGORIA;
   const opcionesCategoria = opcionesDe(categorias[tipo], editing ? draft.movimiento.categoria : null);
+  const faltaCambio = cambiosCargados && moneda !== "USD" && cambios[moneda] == null;
 
   useEffect(() => {
     let active = true;
@@ -100,22 +100,6 @@ export function MovementDialog({
 
       const panel = (await response.json()) as PanelFinanciero;
       setCategorias(panel.categorias);
-      const rates = await fetch("/api/finanzas/cotizaciones", { cache: "no-store" });
-
-      if (!active || !rates.ok) {
-        return;
-      }
-
-      const rows = (await rates.json()) as { moneda?: unknown; valor?: unknown }[];
-      setCotizaciones(
-        Object.fromEntries(
-          rows.flatMap((row) =>
-            typeof row.moneda === "string" && typeof row.valor === "number"
-              ? [[row.moneda, row.valor]]
-              : [],
-          ),
-        ),
-      );
     })();
 
     return () => {
@@ -174,8 +158,6 @@ export function MovementDialog({
     event.preventDefault();
     setPending(true);
     setError(null);
-    const faltaCambio = moneda !== "USD" && cotizaciones[moneda] == null;
-
     if (faltaCambio) {
       if (!administrador) {
         setError("Un administrador tiene que registrar el cambio de esta moneda.");
@@ -326,7 +308,7 @@ export function MovementDialog({
               ))}
             </select>
           </label>
-          {moneda !== "USD" && cotizaciones[moneda] == null ? (
+          {faltaCambio ? (
             administrador ? (
               <label className="flex flex-col gap-2 text-sm font-medium">
                 Cambio
@@ -407,7 +389,11 @@ export function MovementDialog({
             <Button
               variant="primary"
               type="submit"
-              disabled={pending || (moneda !== "USD" && cotizaciones[moneda] == null && !administrador)}
+              disabled={
+                pending ||
+                (!cambiosCargados && moneda !== "USD") ||
+                (faltaCambio && !administrador)
+              }
             >
               {pending ? "Guardando…" : editing ? "Guardar" : "Registrar"}
             </Button>
