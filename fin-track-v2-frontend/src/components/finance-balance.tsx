@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useDisplaySettings } from "@/components/display-settings";
 import { formatMes, mesActual, mesAnterior, type PanelFinanciero } from "@/lib/finance";
 
 export type FinanceVista = "este" | "pasado" | "anio";
+
+const sinSuscripcion = () => () => {};
 
 function etiquetaPeriodo(vista: FinanceVista, ahora: Date) {
   if (vista === "anio") {
@@ -22,11 +24,12 @@ export function FinanceBalance({
   vista: FinanceVista;
 }) {
   const { format, totales } = useDisplaySettings();
-  const [ahora, setAhora] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setAhora(new Date());
-  }, []);
+  // The date depends on the browser, so the server render and hydration leave it empty.
+  const periodo = useSyncExternalStore(
+    sinSuscripcion,
+    () => etiquetaPeriodo(vista, new Date()),
+    () => "",
+  );
 
   return (
     <section
@@ -37,7 +40,7 @@ export function FinanceBalance({
         {vista === "anio" ? "Balance del año" : "Balance del mes"}
       </p>
       <p className="mt-1 text-sm capitalize text-zinc-500 dark:text-zinc-400">
-        {ahora ? etiquetaPeriodo(vista, ahora) : "\u00a0"}
+        {periodo || "\u00a0"}
       </p>
       <p className="mt-3 text-3xl font-semibold tracking-tight break-words tabular-nums sm:text-4xl">
         {format(totales(panel.movimientos).balance)}

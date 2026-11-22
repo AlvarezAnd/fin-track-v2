@@ -130,3 +130,9 @@ yarn test:e2e
 ```
 
 El frontend espera el backend en `BACKEND_URL`. El backend, fuera de Compose, espera PostgreSQL según su `.env`; en local el host es `localhost`. Los tests del backend no abren una conexión real a la base: con `VITEST=true` la conexión queda en `manualInitialization` y el login de prueba usa el administrador del entorno.
+
+### Hook de pre-commit
+
+Husky vive en la raíz; su `package.json` existe solo para eso. Después de clonar, corré `yarn install` en la raíz: el script `prepare` activa `.husky/pre-commit`. En cada commit corre, en este orden, `yarn lint` del backend (oxlint) y del frontend (ESLint), y `yarn test` y `yarn test:e2e` del backend. Ejecuta todos los pasos aunque uno falle y cancela el commit si alguno falla; las advertencias del linter no lo cancelan. Tarda unos 15 segundos.
+
+Los e2e del frontend (Playwright) no están en el hook porque necesitan servidores y base de datos: corrélos a mano con `yarn test:e2e`. El archivo `.gitattributes` fuerza saltos de línea LF en `.husky/` para que `sh` lo ejecute también en Windows.

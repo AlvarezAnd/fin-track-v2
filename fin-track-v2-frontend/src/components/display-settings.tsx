@@ -1,11 +1,20 @@
 "use client";
 
-import { createContext, useContext, useCallback, useLayoutEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import {
   formatMoneda,
   monedaVisible,
   preferenciasIniciales,
   readPreferencias,
+  subscribePreferencias,
   totalesEnMoneda,
   writePreferencias,
   type Preferencias,
@@ -41,29 +50,46 @@ async function leerCambios() {
   );
 }
 
+/** A failed request leaves the rates empty, so totals fall back to USD. */
+function leerCambiosOVacio() {
+  return leerCambios().catch((): Record<string, number> => ({}));
+}
+
 export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
-  const [preferencias, setPreferencias] = useState<Preferencias>(preferenciasIniciales);
+  // The server and the hydration render use the defaults; localStorage applies right after.
+  const preferencias = useSyncExternalStore(
+    subscribePreferencias,
+    readPreferencias,
+    () => preferenciasIniciales,
+  );
   const [cambios, setCambios] = useState<Record<string, number>>({});
   const [cambiosCargados, setCambiosCargados] = useState(false);
 
-  const recargarCambios = useCallback(async () => {
-    try {
-      setCambios(await leerCambios());
-    } catch {
-      setCambios({});
-    } finally {
-      setCambiosCargados(true);
-    }
+  const aplicarCambios = useCallback((siguientes: Record<string, number>) => {
+    setCambios(siguientes);
+    setCambiosCargados(true);
   }, []);
 
-  useLayoutEffect(() => {
-    setPreferencias(readPreferencias());
-    void recargarCambios();
-  }, [recargarCambios]);
+  const recargarCambios = useCallback(async () => {
+    aplicarCambios(await leerCambiosOVacio());
+  }, [aplicarCambios]);
+
+  useEffect(() => {
+    let activo = true;
+
+    void leerCambiosOVacio().then((siguientes) => {
+      if (activo) {
+        aplicarCambios(siguientes);
+      }
+    });
+
+    return () => {
+      activo = false;
+    };
+  }, [aplicarCambios]);
 
   function guardar(next: Preferencias) {
     writePreferencias(next);
-    setPreferencias(next);
   }
 
   return (

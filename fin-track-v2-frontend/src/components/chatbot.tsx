@@ -325,7 +325,7 @@ function responder(
   }
 
   if (text.includes("movimiento") || text.includes("historial") || text.includes("último") || text.includes("ultimo")) {
-    return listarMovimientos(periodo, panel.movimientos, format);
+    return listarMovimientos(periodo, panel.movimientos);
   }
 
   if (text.includes("categor")) {
@@ -343,11 +343,7 @@ function resumen(periodo: string, panel: PanelFinanciero, format: (value: number
   return `En ${periodo}:\nIngresos: ${format(panel.ingresos)}\nEgresos: ${format(panel.egresos)}\nBalance: ${format(panel.balance)}`;
 }
 
-function listarMovimientos(
-  periodo: string,
-  movimientos: Movimiento[],
-  format: (value: number) => string,
-) {
+function listarMovimientos(periodo: string, movimientos: Movimiento[]) {
   if (movimientos.length === 0) {
     return `En ${periodo} todavía no hay movimientos.`;
   }

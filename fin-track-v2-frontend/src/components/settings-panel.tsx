@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useAdministrador } from "@/components/app-shell";
 import { CambioMoneda } from "@/components/cambio-moneda";
 import { ContrasenaCard } from "@/components/contrasena-card";
@@ -16,26 +16,15 @@ import { MONEDAS, type Moneda } from "@/lib/display";
 export function SettingsPanel() {
   const administrador = useAdministrador();
   const { preferencias, cambios, guardar, recargarCambios } = useDisplaySettings();
-  const [theme, setTheme] = useState<Theme>("system");
-  const [moneda, setMoneda] = useState<Moneda>(preferencias.moneda);
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, (): Theme => "system");
+  const moneda = preferencias.moneda;
   const [error, setError] = useState<string | null>(null);
-
-  useLayoutEffect(() => {
-    setTheme(readTheme());
-    return subscribeTheme(() => setTheme(readTheme()));
-  }, []);
-
-  useEffect(() => {
-    setMoneda(preferencias.moneda);
-  }, [preferencias]);
 
   function chooseTheme(next: Theme) {
     applyTheme(next);
-    setTheme(next);
   }
 
   function chooseMoneda(next: Moneda) {
-    setMoneda(next);
     setError(null);
     guardar({ moneda: next });
 

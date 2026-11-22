@@ -13,7 +13,7 @@ yarn dev
 
 Copiá `.env.example` a `.env`. La app queda en http://localhost:3000 (o el puerto de Compose, 3010). Necesita el backend en `BACKEND_URL`. Fuera de Compose, el ejemplo usa `http://localhost:4010`. Dentro de Compose, `http://backend:3001`.
 
-Al ingresar, al cambiar de sección y al cargar los datos de cada pantalla se muestra un spinner.
+Al ingresar, al cambiar de sección y al cargar los datos de cada pantalla se muestra un spinner. Al cambiar de sección el spinner cubre solo el contenido: la cabecera, el sidebar o la barra inferior y el botón del asistente se mantienen visibles y se pueden usar mientras carga.
 
 ## Pantallas
 

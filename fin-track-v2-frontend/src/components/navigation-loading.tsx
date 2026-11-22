@@ -1,50 +1,9 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { LoadingScreen } from "@/components/loading-screen";
-
-let pending = false;
-const listeners = new Set<() => void>();
-
-function emit() {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-export function beginRouteLoading() {
-  if (pending) {
-    return;
-  }
-
-  pending = true;
-  emit();
-}
-
-export function endRouteLoading() {
-  if (!pending) {
-    return;
-  }
-
-  pending = false;
-  emit();
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function getSnapshot() {
-  return pending;
-}
-
-function getServerSnapshot() {
-  return false;
-}
+import { beginRouteLoading, endRouteLoading, useRouteLoading } from "@/components/use-route-loading";
 
 function isInternalHref(href: string) {
   return href.startsWith("/") && !href.startsWith("//");
@@ -58,14 +17,17 @@ function sameDestination(href: string) {
   );
 }
 
+/**
+ * Tracks internal link clicks for the whole app. Inside the dashboard the layout
+ * (header, navigation, assistant) must stay usable, so there `ContentLoading`
+ * covers only the content area; the full-screen overlay is for entering it.
+ */
 export function NavigationLoading() {
   const pathname = usePathname();
-  const storePending = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const [pathPending, setPathPending] = useState(false);
+  const pending = useRouteLoading();
 
   useEffect(() => {
     endRouteLoading();
-    setPathPending(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -91,14 +53,13 @@ export function NavigationLoading() {
       }
 
       beginRouteLoading();
-      setPathPending(true);
     }
 
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  if (!storePending && !pathPending) {
+  if (!pending || pathname.startsWith("/dashboard")) {
     return null;
   }
 

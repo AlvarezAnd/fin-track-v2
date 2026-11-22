@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/button";
 import { SETTINGS_INPUT_CLASS } from "@/components/settings-styles";
 import { parseEquivalencia, type Moneda } from "@/lib/display";
@@ -26,10 +26,14 @@ export function CambioMoneda({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
+  const [valorMostrado, setValorMostrado] = useState(valor);
+
+  // When the stored rate changes, reload the field while rendering (no effect needed).
+  if (valor !== valorMostrado) {
+    setValorMostrado(valor);
     setTexto(textoDe(valor));
     setError(null);
-  }, [valor]);
+  }
 
   async function guardar() {
     const rate = parseEquivalencia(texto);

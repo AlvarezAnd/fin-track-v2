@@ -76,6 +76,32 @@ async function readError(response: Response) {
   return null;
 }
 
+type CargaUsuarios =
+  | { estado: "no-autorizado" }
+  | { estado: "error" }
+  | { estado: "ok"; usuarios: UsuarioItem[]; roles: RolItem[] };
+
+async function cargarUsuarios(): Promise<CargaUsuarios> {
+  const [usuariosResponse, rolesResponse] = await Promise.all([
+    fetch("/api/usuarios"),
+    fetch("/api/roles"),
+  ]);
+
+  if (usuariosResponse.status === 401 || rolesResponse.status === 401) {
+    return { estado: "no-autorizado" };
+  }
+
+  if (!usuariosResponse.ok) {
+    return { estado: "error" };
+  }
+
+  return {
+    estado: "ok",
+    usuarios: parseUsuarios(await usuariosResponse.json()),
+    roles: rolesResponse.ok ? parseRoles(await rolesResponse.json()) : [],
+  };
+}
+
 export function UsersAdminCard() {
   const router = useRouter();
   const sessionUsername = useSessionUsername();
@@ -89,30 +115,33 @@ export function UsersAdminCard() {
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function load() {
-    const [usuariosResponse, rolesResponse] = await Promise.all([
-      fetch("/api/usuarios"),
-      fetch("/api/roles"),
-    ]);
-
-    if (usuariosResponse.status === 401 || rolesResponse.status === 401) {
-      router.replace("/login");
-      return;
-    }
-
-    if (!usuariosResponse.ok) {
-      setError("No se pudieron cargar los usuarios.");
-      setUsuarios([]);
-      return;
-    }
-
-    setUsuarios(parseUsuarios(await usuariosResponse.json()));
-    setRoles(rolesResponse.ok ? parseRoles(await rolesResponse.json()) : []);
-    setError(null);
-  }
-
   useEffect(() => {
-    void load();
+    let activo = true;
+
+    void cargarUsuarios().then((carga) => {
+      if (!activo) {
+        return;
+      }
+
+      if (carga.estado === "no-autorizado") {
+        router.replace("/login");
+        return;
+      }
+
+      if (carga.estado === "error") {
+        setError("No se pudieron cargar los usuarios.");
+        setUsuarios([]);
+        return;
+      }
+
+      setUsuarios(carga.usuarios);
+      setRoles(carga.roles);
+      setError(null);
+    });
+
+    return () => {
+      activo = false;
+    };
   }, [router]);
 
   const visibles = useMemo(() => {

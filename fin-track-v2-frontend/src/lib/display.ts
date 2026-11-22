@@ -31,13 +31,14 @@ export function unidadMoneda(id: Moneda) {
   return MONEDAS.find((item) => item.id === id)?.unidad ?? "peso";
 }
 
-export function readPreferencias(): Preferencias {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return preferenciasIniciales;
-    }
+const PREFERENCIAS_EVENT = "fin-track-preferencias-cambio";
 
+function parsePreferencias(raw: string | null): Preferencias {
+  if (!raw) {
+    return preferenciasIniciales;
+  }
+
+  try {
     const parsed = JSON.parse(raw) as { moneda?: unknown };
     return { moneda: monedaDe(String(parsed.moneda ?? "ARS")) };
   } catch {
@@ -45,8 +46,45 @@ export function readPreferencias(): Preferencias {
   }
 }
 
+let rawLeido: string | null | undefined;
+let preferenciasLeidas = preferenciasIniciales;
+
+/** Snapshot for useSyncExternalStore: the same object while localStorage does not change. */
+export function readPreferencias(): Preferencias {
+  let raw: string | null;
+
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return preferenciasIniciales;
+  }
+
+  if (raw !== rawLeido) {
+    rawLeido = raw;
+    preferenciasLeidas = parsePreferencias(raw);
+  }
+
+  return preferenciasLeidas;
+}
+
 export function writePreferencias(preferencias: Preferencias) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(preferencias));
+  window.dispatchEvent(new Event(PREFERENCIAS_EVENT));
+}
+
+export function subscribePreferencias(onChange: () => void) {
+  function onStorage(event: StorageEvent) {
+    if (event.key === STORAGE_KEY) {
+      onChange();
+    }
+  }
+
+  window.addEventListener(PREFERENCIAS_EVENT, onChange);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(PREFERENCIAS_EVENT, onChange);
+    window.removeEventListener("storage", onStorage);
+  };
 }
 
 export function parseEquivalencia(value: string) {

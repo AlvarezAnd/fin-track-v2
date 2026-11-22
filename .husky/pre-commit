@@ -1,0 +1,29 @@
+# Lint de cada proyecto y tests del backend. Los errores y los tests que fallan
+# bloquean el commit; las advertencias del linter no.
+# Los e2e del frontend (Playwright) necesitan servidores y base de datos: se corren a mano.
+fallos=""
+
+paso() {
+  nombre="$1"
+  shift
+  echo ""
+  echo ">> $nombre"
+
+  if ! "$@"; then
+    fallos="$fallos\n  - $nombre"
+  fi
+}
+
+paso "Backend: lint (oxlint)" yarn --cwd fin-track-v2-backend lint
+paso "Frontend: lint (eslint)" yarn --cwd fin-track-v2-frontend lint
+paso "Backend: tests unitarios" yarn --cwd fin-track-v2-backend test
+paso "Backend: tests e2e" yarn --cwd fin-track-v2-backend test:e2e
+
+if [ -n "$fallos" ]; then
+  echo ""
+  printf "pre-commit: el commit se canceló por fallos en:$fallos\n"
+  exit 1
+fi
+
+echo ""
+echo "pre-commit: todo en orden."

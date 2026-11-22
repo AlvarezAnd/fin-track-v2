@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/app/dashboard/actions";
 import { Button } from "@/components/button";
-import { beginRouteLoading } from "@/components/navigation-loading";
+import { beginRouteLoading } from "@/components/use-route-loading";
 import { applyTheme, subscribeTheme, type Theme } from "@/lib/theme";
 
 const APP_NAME = "Fin Track";

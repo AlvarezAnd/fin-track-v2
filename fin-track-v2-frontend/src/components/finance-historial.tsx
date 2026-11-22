@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import type { FinanceVista } from "@/components/finance-balance";
 import { MovementList } from "@/components/movement-list";
-import { beginRouteLoading } from "@/components/navigation-loading";
+import { beginRouteLoading } from "@/components/use-route-loading";
 import type { PanelFinanciero } from "@/lib/finance";
 
 function vacioPeriodo(vista: FinanceVista) {

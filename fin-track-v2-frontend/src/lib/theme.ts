@@ -9,6 +9,9 @@ export function systemPrefersDark() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
+// Si localStorage no está disponible, la elección vale mientras la página siga abierta.
+let temaEnMemoria: Theme | null = null;
+
 export function readTheme(): Theme {
   try {
     const stored = localStorage.getItem(THEME_KEY);
@@ -16,7 +19,7 @@ export function readTheme(): Theme {
       return stored;
     }
   } catch {
-    return "system";
+    return temaEnMemoria ?? "system";
   }
 
   return "system";
@@ -27,6 +30,7 @@ export function themeIsDark(theme: Theme) {
 }
 
 export function applyTheme(theme: Theme) {
+  temaEnMemoria = theme;
   document.documentElement.classList.toggle("dark", themeIsDark(theme));
 
   try {

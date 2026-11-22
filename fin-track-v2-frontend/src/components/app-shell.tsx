@@ -4,6 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/bottom-nav";
 import { Chatbot } from "@/components/chatbot";
+import { ContentLoading } from "@/components/content-loading";
 import { DisplaySettingsProvider } from "@/components/display-settings";
 import { Header } from "@/components/header";
 import { MovementDialog, type MovementDraft } from "@/components/movement-dialog";
@@ -97,8 +98,9 @@ export function AppShell({
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Header username={username} />
-          <div className="flex flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] xl:pb-0">
+          <div className="relative flex flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] xl:pb-0">
             {children}
+            <ContentLoading />
           </div>
           <BottomNav onCreate={() => openMovement("egreso")} />
           <Chatbot />

@@ -1,0 +1,2 @@
+# Los hooks de husky los ejecuta sh: con saltos de línea CRLF fallan.
+.husky/** text eol=lf

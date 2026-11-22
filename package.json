@@ -1,0 +1,11 @@
+{
+  "name": "fin-track",
+  "private": true,
+  "description": "Raíz del monorepo. Solo aloja husky; el código está en fin-track-v2-backend y fin-track-v2-frontend.",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
