@@ -8,6 +8,11 @@
   color-scheme: light;
 }
 
+/* Reserva el ancho de la barra de scroll: la página no se corre cuando aparece o desaparece. */
+html {
+  scrollbar-gutter: stable;
+}
+
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
