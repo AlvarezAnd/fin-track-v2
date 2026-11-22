@@ -49,9 +49,9 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
     }
   }
 
-  async function descargarFormato() {
+  async function descargarFormato(formato: "excel" | "csv") {
     setErrores([]);
-    const response = await fetch("/api/finanzas/importar/plantilla");
+    const response = await fetch(`/api/finanzas/importar/plantilla/${formato}`);
 
     if (response.status === 401) {
       router.replace("/login");
@@ -67,7 +67,8 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "formato-movimientos.xlsx";
+    link.download =
+      formato === "csv" ? "formato-movimientos.csv" : "formato-movimientos.xlsx";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -85,7 +86,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
       const response = await fetch("/api/finanzas/importar", {
         method: "POST",
         headers: {
-          "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "content-type": contentTypeDe(archivo),
         },
         body: await archivo.arrayBuffer(),
       });
@@ -134,17 +135,27 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
           Importar movimientos
         </h2>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          Descargá el formato y completá la hoja Movimientos. Las columnas son Fecha, Tipo, Moneda
-          y Monto. No lleva categoría: cada fila queda en Importado.
+          Descargá el formato en Excel o CSV. Las columnas son Fecha, Tipo, Moneda y Monto. No lleva
+          categoría: cada fila queda en Importado. Podés subir el archivo .xlsx o .csv completado.
         </p>
-        <button
-          type="button"
-          onClick={() => void descargarFormato()}
-          disabled={pending}
-          className="mt-4 cursor-pointer text-sm font-medium text-emerald-700 underline-offset-2 hover:underline disabled:opacity-60 dark:text-emerald-400"
-        >
-          Descargar formato
-        </button>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+          <button
+            type="button"
+            onClick={() => void descargarFormato("excel")}
+            disabled={pending}
+            className="cursor-pointer text-sm font-medium text-emerald-700 underline-offset-2 hover:underline disabled:opacity-60 dark:text-emerald-400"
+          >
+            Descargar formato Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => void descargarFormato("csv")}
+            disabled={pending}
+            className="cursor-pointer text-sm font-medium text-emerald-700 underline-offset-2 hover:underline disabled:opacity-60 dark:text-emerald-400"
+          >
+            Descargar formato CSV
+          </button>
+        </div>
         <div
           className={`mt-4 flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center text-sm ${
             arrastrando
@@ -173,7 +184,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           <p className="text-zinc-500 dark:text-zinc-400">
-            {archivo ? archivo.name : "Arrastrá el Excel acá"}
+            {archivo ? archivo.name : "Arrastrá el Excel o CSV acá"}
           </p>
           <button
             type="button"
@@ -186,7 +197,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
           <input
             ref={inputRef}
             type="file"
-            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             className="hidden"
             onChange={(event) => {
               elegir(event.target.files?.[0] ?? null);
@@ -224,9 +235,23 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function esCsv(file: File) {
+  return file.name.toLowerCase().endsWith(".csv");
+}
+
+function esExcel(file: File) {
+  return file.name.toLowerCase().endsWith(".xlsx");
+}
+
+function contentTypeDe(file: File) {
+  return esCsv(file)
+    ? "text/csv"
+    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+}
+
 function validarArchivo(file: File) {
-  if (!file.name.toLowerCase().endsWith(".xlsx")) {
-    return "Subí un archivo .xlsx con el formato descargado.";
+  if (!esExcel(file) && !esCsv(file)) {
+    return "Subí un archivo .xlsx o .csv con el formato descargado.";
   }
 
   if (file.size === 0) {

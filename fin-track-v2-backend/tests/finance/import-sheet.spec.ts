@@ -1,5 +1,9 @@
 import { deflateRawSync } from 'node:zlib';
-import { leerMovimientos, plantillaImportacion } from '../../src/finance/import-sheet.js';
+import {
+  leerMovimientos,
+  plantillaImportacion,
+  plantillaImportacionCsv,
+} from '../../src/finance/import-sheet.js';
 import { crearXlsx } from '../../src/finance/xlsx.js';
 
 describe('planilla de importación', () => {
@@ -8,6 +12,29 @@ describe('planilla de importación', () => {
 
     expect(resultado.filas).toEqual([]);
     expect(resultado.errores).toEqual(['No hay movimientos para importar.']);
+  });
+
+  it('builds a CSV template with the same header columns', () => {
+    expect(plantillaImportacionCsv().toString('utf8')).toBe('\uFEFFFecha;Tipo;Moneda;Monto\n');
+  });
+
+  it('reads semicolon and comma CSV rows', () => {
+    const puntoYComa = Buffer.from(
+      '\uFEFFFecha;Tipo;Moneda;Monto\n13/11/2026;Egreso;usd;1.250,50\n2026-11-14;Ingreso;ARS;10\n',
+      'utf8',
+    );
+    const coma = Buffer.from('Fecha,Tipo,Moneda,Monto\n2026-11-13,Egreso,EUR,20\n', 'utf8');
+
+    expect(leerMovimientos(puntoYComa).filas).toEqual([
+      { fecha: '2026-11-13', tipo: 'egreso', moneda: 'USD', monto: 1250.5 },
+      { fecha: '2026-11-14', tipo: 'ingreso', moneda: 'ARS', monto: 10 },
+    ]);
+    expect(leerMovimientos(coma).filas).toEqual([
+      { fecha: '2026-11-13', tipo: 'egreso', moneda: 'EUR', monto: 20 },
+    ]);
+    expect(leerMovimientos(plantillaImportacionCsv()).errores).toEqual([
+      'No hay movimientos para importar.',
+    ]);
   });
 
   it('accepts dates, types and amounts written as text or excel numbers', () => {

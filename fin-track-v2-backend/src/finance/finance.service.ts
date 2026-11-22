@@ -31,7 +31,12 @@ import {
 import { TransactionTypeRepository } from './transaction-type.repository.js';
 import { TransactionType } from './transaction-type.entity.js';
 import { exportarMovimientos, parseFormato } from './export.js';
-import { CATEGORIA_IMPORTADA, leerMovimientos, plantillaImportacion } from './import-sheet.js';
+import {
+  CATEGORIA_IMPORTADA,
+  leerMovimientos,
+  plantillaImportacion,
+  plantillaImportacionCsv,
+} from './import-sheet.js';
 import { amountInUsd, roundMoney } from './money.js';
 import { TransactionRepository } from './transaction.repository.js';
 import { Transaction } from './transaction.entity.js';
@@ -84,6 +89,63 @@ export class FinanceService implements OnModuleInit {
       tipo: categoria.tipo.codigo,
       icono: categoria.icono,
     }));
+  }
+
+  async createCategory(
+    usuarioId: number,
+    body: { nombre?: unknown; tipo?: unknown; icono?: unknown },
+  ) {
+    const nombre = parseCategory(body?.nombre);
+    const codigo = parseType(body?.tipo);
+    const icono = body?.icono === undefined ? undefined : parseIcon(body.icono);
+
+    if (!nombre) {
+      throw new BadRequestException('Ingresá un nombre de hasta 80 caracteres.');
+    }
+
+    if (!codigo) {
+      throw new BadRequestException('El tipo de transacción no es válido.');
+    }
+
+    if (body?.icono !== undefined && !icono) {
+      throw new BadRequestException('El icono no es válido.');
+    }
+
+    const tipoTransaction = await this.tipos.findByCode(codigo);
+
+    if (!tipoTransaction) {
+      throw new BadRequestException('El tipo de transacción no está disponible.');
+    }
+
+    const nombreClave = nombre.toLocaleLowerCase('es-AR');
+    const duplicada = await this.categorias.findOtherByName(
+      usuarioId,
+      nombreClave,
+      codigo,
+      0,
+    );
+
+    if (duplicada) {
+      throw new ConflictException('Ya existe una categoría con ese nombre.');
+    }
+
+    try {
+      const categoria = await this.categorias.create({
+        nombre,
+        nombreClave,
+        usuarioId,
+        tipo: tipoTransaction,
+        icono: icono ?? suggestedIcon(nombre),
+      });
+
+      return presentCategory(categoria);
+    } catch (error) {
+      if (isDuplicateName(error)) {
+        throw new ConflictException('Ya existe una categoría con ese nombre.');
+      }
+
+      throw error;
+    }
   }
 
   async updateCategory(
@@ -263,12 +325,26 @@ export class FinanceService implements OnModuleInit {
     );
   }
 
-  importTemplate() {
-    return {
-      nombre: 'formato-movimientos.xlsx',
-      tipo: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      contenido: plantillaImportacion(),
-    };
+  importTemplate(formato = 'excel') {
+    const elegido = formato.trim().toLowerCase();
+
+    if (elegido === 'csv') {
+      return {
+        nombre: 'formato-movimientos.csv',
+        tipo: 'text/csv; charset=utf-8',
+        contenido: plantillaImportacionCsv(),
+      };
+    }
+
+    if (elegido === 'excel') {
+      return {
+        nombre: 'formato-movimientos.xlsx',
+        tipo: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        contenido: plantillaImportacion(),
+      };
+    }
+
+    throw new BadRequestException('El formato de plantilla debe ser csv o excel.');
   }
 
   async importRows(usuarioId: number, archivo: Buffer) {

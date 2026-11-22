@@ -18,7 +18,11 @@ function redondear(value: number) {
   return Math.round(value * 100) / 100;
 }
 
-export function puntosDe(movimientos: Movimiento[], periodo: Periodo): StatsPunto[] {
+export function puntosDe(
+  movimientos: Movimiento[],
+  periodo: Periodo,
+  montoVisible: (movimiento: Movimiento) => number,
+): StatsPunto[] {
   const { desde, hasta, grano } = rangoPeriodo(periodo);
   const puntos = clavesPeriodo(desde, hasta, grano).map((clave) => ({
     clave,
@@ -41,12 +45,12 @@ export function puntosDe(movimientos: Movimiento[], periodo: Periodo): StatsPunt
       continue;
     }
 
-    const usd = movimiento.usd ?? 0;
+    const monto = montoVisible(movimiento);
 
     if (movimiento.tipo === "ingreso") {
-      punto.ingresos += usd;
+      punto.ingresos += monto;
     } else {
-      punto.egresos += usd;
+      punto.egresos += monto;
     }
   }
 

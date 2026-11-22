@@ -4,7 +4,6 @@ import {
   And,
   In,
   LessThan,
-  LessThanOrEqual,
   MoreThanOrEqual,
   type EntityManager,
   type FindOptionsWhere,
@@ -27,23 +26,32 @@ export class TransactionRepository {
   }
 
   listForMonth(usuarioId: number, start: string, end: string) {
-    return this.transacciones.find({
-      where: {
-        usuarioId,
-        fecha: And(MoreThanOrEqual(start), LessThan(end)),
-      },
-      order: { fecha: 'DESC', creadoEn: 'DESC' },
-    });
+    // Bound by movimiento.fecha (when it happened), never creado_en.
+    return this.transacciones
+      .createQueryBuilder('movimiento')
+      .leftJoinAndSelect('movimiento.categoria', 'categoria')
+      .leftJoinAndSelect('categoria.tipo', 'categoriaTipo')
+      .leftJoinAndSelect('movimiento.tipo', 'tipo')
+      .where('movimiento.usuarioId = :usuarioId', { usuarioId })
+      .andWhere('movimiento.fecha >= :start', { start })
+      .andWhere('movimiento.fecha < :end', { end })
+      .orderBy('movimiento.fecha', 'DESC')
+      .addOrderBy('movimiento.creadoEn', 'DESC')
+      .getMany();
   }
 
   listInRange(usuarioId: number, start: string, end: string) {
-    return this.transacciones.find({
-      where: {
-        usuarioId,
-        fecha: And(MoreThanOrEqual(start), LessThanOrEqual(end)),
-      },
-      order: { fecha: 'DESC', creadoEn: 'DESC' },
-    });
+    return this.transacciones
+      .createQueryBuilder('movimiento')
+      .leftJoinAndSelect('movimiento.categoria', 'categoria')
+      .leftJoinAndSelect('categoria.tipo', 'categoriaTipo')
+      .leftJoinAndSelect('movimiento.tipo', 'tipo')
+      .where('movimiento.usuarioId = :usuarioId', { usuarioId })
+      .andWhere('movimiento.fecha >= :start', { start })
+      .andWhere('movimiento.fecha <= :end', { end })
+      .orderBy('movimiento.fecha', 'DESC')
+      .addOrderBy('movimiento.creadoEn', 'DESC')
+      .getMany();
   }
 
   findById(usuarioId: number, id: number) {

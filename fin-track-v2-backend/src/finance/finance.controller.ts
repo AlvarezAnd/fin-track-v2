@@ -38,6 +38,16 @@ export class FinanceController {
     return this.finance.listCategories(user.id, tipo);
   }
 
+  @Post('categorias')
+  @HttpCode(201)
+  @Can(AccessPolicy, 'writeFinance')
+  createCategory(
+    @CurrentUser() user: AppUser,
+    @Body() body: { nombre?: unknown; tipo?: unknown; icono?: unknown },
+  ) {
+    return this.finance.createCategory(user.id, body);
+  }
+
   @Patch('categorias/:id')
   @Can(AccessPolicy, 'writeFinance')
   updateCategory(
@@ -87,8 +97,18 @@ export class FinanceController {
 
   @Get('transacciones/importar/plantilla')
   @Can(AccessPolicy, 'writeFinance')
-  importTemplate() {
-    const archivo = this.finance.importTemplate();
+  importTemplateExcel() {
+    return this.streamImportTemplate('excel');
+  }
+
+  @Get('transacciones/importar/plantilla/:formato')
+  @Can(AccessPolicy, 'writeFinance')
+  importTemplate(@Param('formato') formato: string) {
+    return this.streamImportTemplate(formato);
+  }
+
+  private streamImportTemplate(formato: string) {
+    const archivo = this.finance.importTemplate(formato);
 
     return new StreamableFile(archivo.contenido, {
       type: archivo.tipo,

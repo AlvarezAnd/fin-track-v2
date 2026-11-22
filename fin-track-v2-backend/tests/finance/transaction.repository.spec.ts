@@ -5,19 +5,26 @@ import { TransactionRepository } from '../../src/finance/transaction.repository.
 function query(result: unknown = []) {
   const builder = {
     innerJoin: vi.fn(),
+    leftJoinAndSelect: vi.fn(),
     select: vi.fn(),
     addSelect: vi.fn(),
     where: vi.fn(),
     andWhere: vi.fn(),
+    orderBy: vi.fn(),
+    addOrderBy: vi.fn(),
     groupBy: vi.fn(),
     getCount: vi.fn(async () => result),
     getRawMany: vi.fn(async () => result),
+    getMany: vi.fn(async () => (Array.isArray(result) ? result : [])),
   };
   builder.innerJoin.mockReturnValue(builder);
+  builder.leftJoinAndSelect.mockReturnValue(builder);
   builder.select.mockReturnValue(builder);
   builder.addSelect.mockReturnValue(builder);
   builder.where.mockReturnValue(builder);
   builder.andWhere.mockReturnValue(builder);
+  builder.orderBy.mockReturnValue(builder);
+  builder.addOrderBy.mockReturnValue(builder);
   builder.groupBy.mockReturnValue(builder);
   return builder;
 }
@@ -37,33 +44,29 @@ function repository() {
 }
 
 describe('TransactionRepository', () => {
-  it('lists a month with the end date excluded', async () => {
+  it('lists a month with the end date excluded by fecha', async () => {
+    const builder = query([]);
     const { repository: repo, transacciones } = repository();
-    transacciones.find.mockResolvedValue([]);
+    transacciones.createQueryBuilder.mockReturnValue(builder);
 
     await repo.listForMonth(1, '2026-11-01', '2026-12-01');
 
-    const where = transacciones.find.mock.calls[0][0].where;
-    expect(where.usuarioId).toBe(1);
-    expect(where.fecha.type).toBe('and');
-    expect(where.fecha.value.map((item: { type: string; value: string }) => [item.type, item.value])).toEqual([
-      ['moreThanOrEqual', '2026-11-01'],
-      ['lessThan', '2026-12-01'],
-    ]);
-    expect(transacciones.find.mock.calls[0][0].order).toEqual({ fecha: 'DESC', creadoEn: 'DESC' });
+    expect(builder.where).toHaveBeenCalledWith('movimiento.usuarioId = :usuarioId', { usuarioId: 1 });
+    expect(builder.andWhere).toHaveBeenCalledWith('movimiento.fecha >= :start', { start: '2026-11-01' });
+    expect(builder.andWhere).toHaveBeenCalledWith('movimiento.fecha < :end', { end: '2026-12-01' });
+    expect(builder.orderBy).toHaveBeenCalledWith('movimiento.fecha', 'DESC');
+    expect(builder.addOrderBy).toHaveBeenCalledWith('movimiento.creadoEn', 'DESC');
   });
 
-  it('lists a closed date range', async () => {
+  it('lists a closed date range by fecha', async () => {
+    const builder = query([]);
     const { repository: repo, transacciones } = repository();
-    transacciones.find.mockResolvedValue([]);
+    transacciones.createQueryBuilder.mockReturnValue(builder);
 
     await repo.listInRange(1, '2026-11-01', '2026-11-10');
 
-    const where = transacciones.find.mock.calls[0][0].where;
-    expect(where.fecha.value.map((item: { type: string; value: string }) => item.type)).toEqual([
-      'moreThanOrEqual',
-      'lessThanOrEqual',
-    ]);
+    expect(builder.andWhere).toHaveBeenCalledWith('movimiento.fecha >= :start', { start: '2026-11-01' });
+    expect(builder.andWhere).toHaveBeenCalledWith('movimiento.fecha <= :end', { end: '2026-11-10' });
   });
 
   it('finds and deletes by user and id', async () => {

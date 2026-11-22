@@ -21,7 +21,7 @@ Al ingresar, al cambiar de sección y al cargar los datos de cada pantalla se mu
 | --- | --- |
 | `/login` | Usuario y contraseña, o alta de una cuenta común. |
 | `/dashboard` | Balance del período, alta de ingreso y egreso, totales y los últimos cinco movimientos. |
-| `/dashboard/movimientos` | Historial, búsqueda y filtro por tipo y categoría. Junto al título, Importar baja un Excel de formato y sube movimientos, Nuevo abre el alta y Exportar descarga todos los movimientos hasta hoy en CSV, Excel o PDF. |
+| `/dashboard/movimientos` | Historial, búsqueda y filtro por tipo y categoría. Junto al título, Importar baja el formato en Excel o CSV y sube el `.xlsx` o `.csv` completado, Nuevo abre el alta y Exportar descarga todos los movimientos hasta hoy en CSV, Excel o PDF. |
 | `/dashboard/categorias` | Categorías filtradas por Todo, Egresos o Ingresos. El nombre y el icono se editan; se borra si no tiene movimientos. |
 | `/dashboard/estadisticas` | Totales y gráficos por día, mes, tres meses, seis meses o año. El período está junto al título. |
 | `/dashboard/configuracion` | Cambio de la contraseña propia, tema claro, oscuro o el del sistema, moneda de visualización y cambios. Solo el administrador guarda un cambio y gestiona usuarios (buscador, tabla, ver / editar roles / eliminar). |
@@ -34,7 +34,7 @@ En escritorio la navegación va en un sidebar a la izquierda (las cinco seccione
 
 El navegador no ve la contraseña. `access_token` y `refresh_token` son cookies `httpOnly`. Un access token vencido se renueva con `GET /api/auth/refresh` antes de seguir, porque un componente de servidor no puede guardar la cookie nueva.
 
-El tema se guarda en `localStorage` con la clave `theme`: `light`, `dark` o `system`. Si no hay valor, o si es `system`, la pantalla sigue el color del dispositivo. La moneda de visualización queda en `fin-track-preferencias` y arranca en pesos. Los totales de la API están en dólares y se convierten con el cambio cargado. Cada movimiento se muestra en su propia moneda. Al registrarlo se elige la moneda; si no hay cambio, el administrador lo carga en el mismo formulario. El resto ve el aviso y no puede guardar esa moneda hasta que exista.
+El tema se guarda en `localStorage` con la clave `theme`: `light`, `dark` o `system`. Si no hay valor, o si es `system`, la pantalla sigue el color del dispositivo. La moneda de visualización queda en `fin-track-preferencias` y arranca en pesos. Los totales de la API están en dólares, pero la pantalla los calcula desde los movimientos en la moneda visible: usa el monto exacto si coincide y convierte los demás con el cambio guardado en cada uno. Así un ingreso de $1.650.000 no cambia por redondeo. Cada movimiento se muestra en su propia moneda. Al registrarlo se elige la moneda; si no hay cambio, el administrador lo carga en el mismo formulario. El resto ve el aviso y no puede guardar esa moneda hasta que exista.
 
 La tipografía es JetBrains Mono.
 

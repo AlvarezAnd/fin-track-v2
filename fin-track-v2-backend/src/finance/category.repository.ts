@@ -84,9 +84,10 @@ export class CategoryRepository {
       tipo: TransactionType;
       icono: string;
     },
-    manager: EntityManager,
+    manager?: EntityManager,
   ) {
-    return manager.save(manager.create(Category, datos));
+    const repo = this.repo(manager);
+    return repo.save(repo.create(datos));
   }
 
   save(categoria: Category, manager?: EntityManager) {

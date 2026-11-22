@@ -13,6 +13,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { Section } from "@/components/section";
 import { Tabs } from "@/components/tabs";
 import {
+  fechaLocal,
   mesActual,
   mesAnterior,
   type Movimiento,
@@ -29,6 +30,34 @@ function redondear(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+/** Totals and history always follow movimiento.fecha (when it happened), not created-at. */
+function panelPorFecha(movimientos: Movimiento[], periodo: string): PanelFinanciero {
+  const delPeriodo = movimientos.filter((movimiento) =>
+    periodo.length === 4
+      ? movimiento.fecha.startsWith(`${periodo}-`)
+      : movimiento.fecha.startsWith(periodo),
+  );
+  const ingresos = redondear(
+    delPeriodo
+      .filter((movimiento) => movimiento.tipo === "ingreso")
+      .reduce((total, movimiento) => total + (movimiento.usd ?? 0), 0),
+  );
+  const egresos = redondear(
+    delPeriodo
+      .filter((movimiento) => movimiento.tipo === "egreso")
+      .reduce((total, movimiento) => total + (movimiento.usd ?? 0), 0),
+  );
+
+  return {
+    mes: periodo,
+    balance: redondear(ingresos - egresos),
+    ingresos,
+    egresos,
+    categorias: { ingreso: [], egreso: [] },
+    movimientos: delPeriodo,
+  };
+}
+
 async function cargarVista(vista: FinanceVista): Promise<PanelFinanciero | "unauthorized"> {
   if (vista !== "anio") {
     const mes = vista === "pasado" ? mesAnterior() : mesActual();
@@ -42,10 +71,15 @@ async function cargarVista(vista: FinanceVista): Promise<PanelFinanciero | "unau
       throw new Error("panel");
     }
 
-    return (await response.json()) as PanelFinanciero;
+    const body = (await response.json()) as PanelFinanciero;
+    // Recompute from fecha so a wider payload cannot inflate the month balance.
+    return {
+      ...panelPorFecha(body.movimientos ?? [], mes),
+      categorias: body.categorias ?? { ingreso: [], egreso: [] },
+    };
   }
 
-  const year = new Date().getFullYear();
+  const year = fechaLocal().slice(0, 4);
   const response = await fetch(
     `/api/finanzas/movimientos?desde=${year}-01-01&hasta=${year}-12-31`,
     { cache: "no-store" },
@@ -60,25 +94,7 @@ async function cargarVista(vista: FinanceVista): Promise<PanelFinanciero | "unau
   }
 
   const body = (await response.json()) as { movimientos: Movimiento[] };
-  const ingresos = redondear(
-    body.movimientos
-      .filter((movimiento) => movimiento.tipo === "ingreso")
-      .reduce((total, movimiento) => total + (movimiento.usd ?? 0), 0),
-  );
-  const egresos = redondear(
-    body.movimientos
-      .filter((movimiento) => movimiento.tipo === "egreso")
-      .reduce((total, movimiento) => total + (movimiento.usd ?? 0), 0),
-  );
-
-  return {
-    mes: String(year),
-    balance: redondear(ingresos - egresos),
-    ingresos,
-    egresos,
-    categorias: { ingreso: [], egreso: [] },
-    movimientos: body.movimientos,
-  };
+  return panelPorFecha(body.movimientos ?? [], year);
 }
 
 export function FinancePanel() {

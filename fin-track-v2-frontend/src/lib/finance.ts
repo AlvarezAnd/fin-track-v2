@@ -33,21 +33,39 @@ const money = new Intl.NumberFormat("es-AR", {
   currency: "ARS",
 });
 
-export function mesActual(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
+/** Calendar dates follow America/Argentina/Buenos_Aires, same as the API. */
+const TIME_ZONE = "America/Argentina/Buenos_Aires";
 
-export function mesAnterior(date = new Date()) {
-  return mesActual(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+function parteFecha(
+  date: Date,
+  type: "year" | "month" | "day",
+) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .formatToParts(date)
+    .find((part) => part.type === type)?.value;
 }
 
 export function fechaLocal(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = parteFecha(date, "year");
+  const month = parteFecha(date, "month");
+  const day = parteFecha(date, "day");
   return `${year}-${month}-${day}`;
+}
+
+export function mesActual(date = new Date()) {
+  return fechaLocal(date).slice(0, 7);
+}
+
+export function mesAnterior(date = new Date()) {
+  const [year, month] = mesActual(date).split("-").map(Number);
+  const anterior = month === 1 ? 12 : month - 1;
+  const anio = month === 1 ? year - 1 : year;
+  return `${anio}-${String(anterior).padStart(2, "0")}`;
 }
 
 export function formatMonto(value: number) {
@@ -78,6 +96,7 @@ export type Periodo = "dia" | "mes" | "3m" | "6m" | "anio";
 
 export function rangoPeriodo(periodo: Periodo, today = new Date()) {
   const hasta = fechaLocal(today);
+  const mes = mesActual(today);
 
   if (periodo === "dia") {
     return { desde: hasta, hasta, grano: "day" as const };
@@ -85,17 +104,22 @@ export function rangoPeriodo(periodo: Periodo, today = new Date()) {
 
   if (periodo === "mes") {
     return {
-      desde: fechaLocal(new Date(today.getFullYear(), today.getMonth(), 1)),
+      desde: `${mes}-01`,
       hasta,
       grano: "day" as const,
     };
   }
 
   const meses = periodo === "3m" ? 3 : periodo === "6m" ? 6 : 12;
+  let [year, month] = mes.split("-").map(Number);
+  month -= meses - 1;
+  while (month <= 0) {
+    month += 12;
+    year -= 1;
+  }
+
   return {
-    desde: fechaLocal(
-      new Date(today.getFullYear(), today.getMonth() - (meses - 1), 1),
-    ),
+    desde: `${year}-${String(month).padStart(2, "0")}-01`,
     hasta,
     grano: "month" as const,
   };

@@ -18,7 +18,10 @@ export class PaginaMovimientos {
   }
 
   async expectUnRegistro() {
-    await expect(this.page.getByText("1 registro encontrado")).toBeVisible();
+    // Resumen has the same counter and can stay mounted but hidden after navigating.
+    await expect(
+      this.page.getByText("1 registro encontrado").filter({ visible: true }),
+    ).toBeVisible();
   }
 
   async expectSinResultados() {

@@ -30,7 +30,11 @@ export async function createNestApp(
   );
 
   app.useBodyParser('raw', {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    type: [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'application/csv',
+    ],
     limit: '2mb',
   });
   // Browser clients (the Next frontend, Swagger UI opened from another origin)

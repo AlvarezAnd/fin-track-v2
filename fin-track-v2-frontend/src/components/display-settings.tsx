@@ -1,7 +1,16 @@
 "use client";
 
 import { createContext, useContext, useCallback, useLayoutEffect, useState, type ReactNode } from "react";
-import { formatDesdeUsd, preferenciasIniciales, readPreferencias, writePreferencias, type Preferencias } from "@/lib/display";
+import {
+  formatMoneda,
+  monedaVisible,
+  preferenciasIniciales,
+  readPreferencias,
+  totalesEnMoneda,
+  writePreferencias,
+  type Preferencias,
+} from "@/lib/display";
+import type { Movimiento } from "@/lib/finance";
 
 type DisplaySettingsValue = {
   preferencias: Preferencias;
@@ -9,7 +18,9 @@ type DisplaySettingsValue = {
   cambiosCargados: boolean;
   guardar: (preferencias: Preferencias) => void;
   recargarCambios: () => Promise<void>;
-  format: (usd: number) => string;
+  /** Formats an amount already expressed in the visible currency. */
+  format: (monto: number) => string;
+  totales: (movimientos: Movimiento[]) => { ingresos: number; egresos: number; balance: number };
 };
 
 const DisplaySettingsContext = createContext<DisplaySettingsValue | null>(null);
@@ -63,7 +74,8 @@ export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
         cambiosCargados,
         guardar,
         recargarCambios,
-        format: (value) => formatDesdeUsd(value, preferencias.moneda, cambios),
+        format: (monto) => formatMoneda(monto, monedaVisible(preferencias.moneda, cambios)),
+        totales: (movimientos) => totalesEnMoneda(movimientos, preferencias.moneda, cambios),
       }}
     >
       {children}

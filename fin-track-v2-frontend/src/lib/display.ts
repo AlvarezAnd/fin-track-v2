@@ -73,18 +73,75 @@ export function parseEquivalencia(value: string) {
   return Math.round(amount * 10000) / 10000;
 }
 
-export function montoDesdeUsd(value: number, moneda: Moneda, cambios: Record<string, number>) {
-  if (moneda === "USD") {
-    return value;
+type MontoMovimiento = {
+  monto: number;
+  moneda: string;
+  cotizacion: number | null;
+  usd: number | null;
+  tipo: "ingreso" | "egreso";
+};
+
+function redondearMonto(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+/** The display currency, or USD while that currency has no stored rate. */
+export function monedaVisible(moneda: Moneda, cambios: Record<string, number>): Moneda {
+  return moneda === "USD" || cambios[moneda] ? moneda : "USD";
+}
+
+/**
+ * Never round-trips through the rounded `usd`: a movement already in the target
+ * currency keeps its exact amount, and the rest convert from the rate they were saved with.
+ */
+export function montoEnMoneda(
+  movimiento: MontoMovimiento,
+  moneda: Moneda,
+  cambios: Record<string, number>,
+) {
+  const destino = monedaVisible(moneda, cambios);
+
+  if (movimiento.moneda === destino) {
+    return movimiento.monto;
   }
 
-  const cambio = cambios[moneda];
-
-  if (!cambio) {
-    return null;
+  if (destino === "USD") {
+    return movimiento.usd ?? 0;
   }
 
-  return Math.round(value * cambio * 100) / 100;
+  const usd =
+    movimiento.moneda === "USD"
+      ? movimiento.monto
+      : movimiento.cotizacion
+        ? movimiento.monto / movimiento.cotizacion
+        : movimiento.usd;
+
+  return usd == null ? 0 : redondearMonto(usd * cambios[destino]);
+}
+
+export function totalesEnMoneda(
+  movimientos: MontoMovimiento[],
+  moneda: Moneda,
+  cambios: Record<string, number>,
+) {
+  let ingresos = 0;
+  let egresos = 0;
+
+  for (const movimiento of movimientos) {
+    const monto = montoEnMoneda(movimiento, moneda, cambios);
+
+    if (movimiento.tipo === "ingreso") {
+      ingresos += monto;
+    } else {
+      egresos += monto;
+    }
+  }
+
+  return {
+    ingresos: redondearMonto(ingresos),
+    egresos: redondearMonto(egresos),
+    balance: redondearMonto(ingresos - egresos),
+  };
 }
 
 const formatters = new Map<Moneda, Intl.NumberFormat>();
@@ -101,14 +158,4 @@ export function formatMoneda(value: number, moneda: Moneda) {
   }
 
   return formatter.format(value);
-}
-
-export function formatDesdeUsd(value: number, moneda: Moneda, cambios: Record<string, number>) {
-  const convertido = montoDesdeUsd(value, moneda, cambios);
-
-  if (convertido == null) {
-    return formatMoneda(value, "USD");
-  }
-
-  return formatMoneda(convertido, moneda);
 }

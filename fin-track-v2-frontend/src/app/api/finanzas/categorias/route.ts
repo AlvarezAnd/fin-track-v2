@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
-import { proxyResult } from "@/lib/api-proxy";
+import { proxyApi, proxyResult } from "@/lib/api-proxy";
 import { apiFetch } from "@/lib/session";
+
+export async function POST(request: Request) {
+  return proxyApi("/categorias", {
+    method: "POST",
+    body: await request.text(),
+  });
+}
 
 export async function GET() {
   const [ingresos, egresos] = await Promise.all([

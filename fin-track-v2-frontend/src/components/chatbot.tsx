@@ -22,6 +22,12 @@ type Mensaje = {
   texto: string;
 };
 
+type Totales = (movimientos: Movimiento[]) => {
+  ingresos: number;
+  egresos: number;
+  balance: number;
+};
+
 const SUGERENCIAS = ["Balance del mes", "Ingresos y egresos", "Últimos movimientos"];
 
 const SALUDO =
@@ -29,7 +35,7 @@ const SALUDO =
 
 export function Chatbot() {
   const router = useRouter();
-  const { format } = useDisplaySettings();
+  const { format, totales } = useDisplaySettings();
   const panelId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -99,7 +105,7 @@ export function Chatbot() {
         })),
       { role: "user" as const, content: consulta },
     ];
-    const respuesta = await preguntar(historial, format);
+    const respuesta = await preguntar(historial, format, totales);
 
     if (respuesta === "auth") {
       router.replace("/login");
@@ -217,6 +223,7 @@ export function Chatbot() {
 async function preguntar(
   historial: Array<{ role: "user" | "assistant"; content: string }>,
   format: (value: number) => string,
+  totales: Totales,
 ): Promise<string | "auth"> {
   const pregunta = historial.at(-1)?.content ?? "";
   let response: Response;
@@ -229,7 +236,7 @@ async function preguntar(
       cache: "no-store",
     });
   } catch {
-    return consultar(pregunta, format);
+    return consultar(pregunta, format, totales);
   }
 
   if (response.status === 401) {
@@ -249,7 +256,7 @@ async function preguntar(
   } | null;
 
   if (!response.ok || body?.fallback || typeof body?.respuesta !== "string" || !body.respuesta) {
-    return consultar(pregunta, format);
+    return consultar(pregunta, format, totales);
   }
 
   return body.respuesta;
@@ -258,6 +265,7 @@ async function preguntar(
 async function consultar(
   pregunta: string,
   format: (value: number) => string,
+  totales: Totales,
 ): Promise<string | "auth"> {
   const text = pregunta.toLocaleLowerCase("es-AR");
   const mes = text.includes("pasado") || text.includes("anterior") ? mesAnterior() : mesActual();
@@ -272,10 +280,15 @@ async function consultar(
   }
 
   const panel = (await response.json()) as PanelFinanciero;
-  return responder(text, panel, format);
+  return responder(text, { ...panel, ...totales(panel.movimientos) }, format, totales);
 }
 
-function responder(text: string, panel: PanelFinanciero, format: (value: number) => string) {
+function responder(
+  text: string,
+  panel: PanelFinanciero,
+  format: (value: number) => string,
+  totales: Totales,
+) {
   const periodo = formatMes(panel.mes);
   const pideIngreso = text.includes("ingreso");
   const pideEgreso = text.includes("egreso") || text.includes("gasto");
@@ -287,7 +300,8 @@ function responder(text: string, panel: PanelFinanciero, format: (value: number)
       (movimiento) =>
         movimiento.categoria.toLocaleLowerCase("es-AR") === categoria.toLocaleLowerCase("es-AR"),
     );
-    const total = movimientos.reduce((sum, movimiento) => sum + (movimiento.usd ?? 0), 0);
+    const { ingresos, egresos } = totales(movimientos);
+    const total = ingresos + egresos;
 
     return movimientos.length === 0
       ? `En ${periodo} no hay movimientos de ${categoria}.`

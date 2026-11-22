@@ -11,6 +11,7 @@ import { crearXlsx, leerHoja } from './xlsx.js';
 export const CATEGORIA_IMPORTADA = 'Importado';
 const MAXIMO_FILAS = 500;
 const ENCABEZADO = ['fecha', 'tipo', 'moneda', 'monto'] as const;
+const ZIP_LOCAL = 0x04034b50;
 
 export type FilaImportada = {
   fecha: string;
@@ -39,11 +40,24 @@ export function plantillaImportacion() {
   ]);
 }
 
+/** Same columns as the Excel sheet, semicolon-separated with a UTF-8 BOM. */
+export function plantillaImportacionCsv() {
+  return Buffer.from('\uFEFFFecha;Tipo;Moneda;Monto\n', 'utf8');
+}
+
 export function leerMovimientos(archivo: Buffer): { filas: FilaImportada[]; errores: string[] } {
-  if (archivo.length < 4 || archivo.readUInt32LE(0) !== 0x04034b50) {
-    return { filas: [], errores: ['El archivo no es un Excel .xlsx válido.'] };
+  if (archivo.length === 0) {
+    return { filas: [], errores: ['El archivo está vacío.'] };
   }
 
+  if (esXlsx(archivo)) {
+    return leerMovimientosXlsx(archivo);
+  }
+
+  return leerMovimientosCsv(archivo);
+}
+
+function leerMovimientosXlsx(archivo: Buffer) {
   let hoja: string[][] | null;
 
   try {
@@ -56,6 +70,38 @@ export function leerMovimientos(archivo: Buffer): { filas: FilaImportada[]; erro
     return { filas: [], errores: ['El archivo no tiene la hoja Movimientos.'] };
   }
 
+  return leerTabla(hoja);
+}
+
+function leerMovimientosCsv(archivo: Buffer) {
+  let texto: string;
+
+  try {
+    texto = archivo.toString('utf8');
+  } catch {
+    return { filas: [], errores: ['El archivo CSV no es válido.'] };
+  }
+
+  if (texto.charCodeAt(0) === 0xfeff) {
+    texto = texto.slice(1);
+  }
+
+  const lineas = texto.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  while (lineas.length > 0 && (lineas[lineas.length - 1] ?? '').trim() === '') {
+    lineas.pop();
+  }
+
+  if (lineas.length === 0) {
+    return { filas: [], errores: ['El archivo CSV está vacío.'] };
+  }
+
+  const separador = lineas[0]?.includes(';') ? ';' : ',';
+  const hoja = lineas.map((linea) => partirCsv(linea, separador));
+  return leerTabla(hoja);
+}
+
+function leerTabla(hoja: string[][]) {
   const encabezado = (hoja[0] ?? []).map((celda) => normalizar(celda));
   const columnas = encabezado.filter((celda) => celda.length > 0);
 
@@ -136,6 +182,50 @@ export function leerMovimientos(archivo: Buffer): { filas: FilaImportada[]; erro
   }
 
   return { filas, errores: [] };
+}
+
+function esXlsx(archivo: Buffer) {
+  return archivo.length >= 4 && archivo.readUInt32LE(0) === ZIP_LOCAL;
+}
+
+function partirCsv(linea: string, separador: string) {
+  const celdas: string[] = [];
+  let actual = '';
+  let entreComillas = false;
+
+  for (let index = 0; index < linea.length; index += 1) {
+    const caracter = linea[index] ?? '';
+
+    if (entreComillas) {
+      if (caracter === '"') {
+        if (linea[index + 1] === '"') {
+          actual += '"';
+          index += 1;
+        } else {
+          entreComillas = false;
+        }
+      } else {
+        actual += caracter;
+      }
+      continue;
+    }
+
+    if (caracter === '"') {
+      entreComillas = true;
+      continue;
+    }
+
+    if (caracter === separador) {
+      celdas.push(actual);
+      actual = '';
+      continue;
+    }
+
+    actual += caracter;
+  }
+
+  celdas.push(actual);
+  return celdas;
 }
 
 function parseFecha(value: string) {

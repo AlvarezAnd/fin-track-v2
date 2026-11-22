@@ -21,7 +21,7 @@ export function FinanceBalance({
   panel: PanelFinanciero;
   vista: FinanceVista;
 }) {
-  const { format } = useDisplaySettings();
+  const { format, totales } = useDisplaySettings();
   const [ahora, setAhora] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function FinanceBalance({
         {ahora ? etiquetaPeriodo(vista, ahora) : "\u00a0"}
       </p>
       <p className="mt-3 text-3xl font-semibold tracking-tight break-words tabular-nums sm:text-4xl">
-        {format(panel.balance)}
+        {format(totales(panel.movimientos).balance)}
       </p>
     </section>
   );

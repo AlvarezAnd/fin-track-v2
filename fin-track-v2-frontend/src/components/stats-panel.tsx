@@ -11,6 +11,7 @@ import { StatsChart } from "@/components/stats-chart";
 import { puntosDe, redondearStats } from "@/components/stats-punto";
 import { StatsTotal } from "@/components/stats-total";
 import { Tabs } from "@/components/tabs";
+import { montoEnMoneda } from "@/lib/display";
 import {
   formatFecha,
   rangoPeriodo,
@@ -28,7 +29,7 @@ const PERIODOS: { id: Periodo; label: string }[] = [
 
 export function StatsPanel() {
   const router = useRouter();
-  const { format } = useDisplaySettings();
+  const { format, preferencias, cambios } = useDisplaySettings();
   const { revision } = useMovement();
   const [movimientos, setMovimientos] = useState<Movimiento[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +70,13 @@ export function StatsPanel() {
   }, [revision, router]);
 
   const puntos = useMemo(
-    () => (movimientos ? puntosDe(movimientos, periodo) : []),
-    [movimientos, periodo],
+    () =>
+      movimientos
+        ? puntosDe(movimientos, periodo, (movimiento) =>
+            montoEnMoneda(movimiento, preferencias.moneda, cambios),
+          )
+        : [],
+    [movimientos, periodo, preferencias.moneda, cambios],
   );
   const ingresos = redondearStats(puntos.reduce((total, punto) => total + punto.ingresos, 0));
   const egresos = redondearStats(puntos.reduce((total, punto) => total + punto.egresos, 0));

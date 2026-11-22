@@ -6,7 +6,8 @@ export class PaginaIngreso {
 
   constructor(private readonly page: Page) {
     this.usuario = page.getByLabel("Nombre de usuario");
-    this.contrasena = page.getByLabel("Contraseña");
+    // The label also wraps the "Mostrar contraseña" button, so getByLabel matches both.
+    this.contrasena = page.locator('input[name="password"]');
   }
 
   async abrir() {

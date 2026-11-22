@@ -136,6 +136,64 @@ describe('FinanceService', () => {
     expect(categorias.listByType).toHaveBeenCalledWith(1, 'ingreso');
   });
 
+  it('creates a category with a suggested icon', async () => {
+    const { service, tipos, categorias } = serviceWith();
+    tipos.findByCode.mockResolvedValue(tipo('egreso'));
+    categorias.findOtherByName.mockResolvedValue(null);
+    categorias.create.mockResolvedValue(
+      categoria({
+        id: 4,
+        nombre: 'Alquiler',
+        nombreClave: 'alquiler',
+        icono: 'casa',
+        tipo: tipo('egreso'),
+      }),
+    );
+
+    await expect(
+      service.createCategory(1, { nombre: 'Alquiler', tipo: 'egreso' }),
+    ).resolves.toEqual({
+      id: 4,
+      nombre: 'Alquiler',
+      tipo: 'egreso',
+      icono: 'casa',
+    });
+    expect(categorias.create).toHaveBeenCalledWith({
+      nombre: 'Alquiler',
+      nombreClave: 'alquiler',
+      usuarioId: 1,
+      tipo: tipo('egreso'),
+      icono: 'casa',
+    });
+  });
+
+  it('rejects a category create with bad input or a duplicate name', async () => {
+    const { service, tipos, categorias } = serviceWith();
+
+    await expect(service.createCategory(1, { tipo: 'egreso' })).rejects.toThrow(
+      'Ingresá un nombre de hasta 80 caracteres.',
+    );
+    await expect(
+      service.createCategory(1, { nombre: 'Alquiler', tipo: 'otro' }),
+    ).rejects.toThrow('El tipo de transacción no es válido.');
+    tipos.findByCode.mockResolvedValueOnce(null);
+    await expect(
+      service.createCategory(1, { nombre: 'Alquiler', tipo: 'egreso' }),
+    ).rejects.toThrow('El tipo de transacción no está disponible.');
+    tipos.findByCode.mockResolvedValue(tipo('egreso'));
+    await expect(
+      service.createCategory(1, {
+        nombre: 'Alquiler',
+        tipo: 'egreso',
+        icono: 'no-existe',
+      }),
+    ).rejects.toThrow('El icono no es válido.');
+    categorias.findOtherByName.mockResolvedValue(categoria({ id: 2 }));
+    await expect(
+      service.createCategory(1, { nombre: 'Alquiler', tipo: 'egreso' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
   it('updates a category name and icon', async () => {
     const row = categoria();
     const { service, categorias } = serviceWith();

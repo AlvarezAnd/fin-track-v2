@@ -67,7 +67,8 @@ Permisos: `finance.read`, `finance.write`, `users.read`, `users.manage`. El rol 
 | `PUT /cotizaciones/:moneda` | rol `admin` | `{ "valor" }`. Unidades de esa moneda por 1 USD. `USD` responde 400 |
 | `GET /transacciones` | `finance.read` | `mes=YYYY-MM`, o `desde` y `hasta` |
 | `GET /transacciones/importar/plantilla` | `finance.write` | Responde `formato-movimientos.xlsx`. Columnas Fecha, Tipo, Moneda y Monto |
-| `POST /transacciones/importar` | `finance.write` | El archivo `.xlsx` en el cuerpo. 400 con `errores` si el formato o alguna celda no es válido; no guarda nada. Cada fila queda en la categoría Importado |
+| `GET /transacciones/importar/plantilla/:formato` | `finance.write` | `csv` o `excel`. Archivo `formato-movimientos.csv` o `.xlsx` |
+| `POST /transacciones/importar` | `finance.write` | El archivo `.xlsx` o `.csv` en el cuerpo. 400 con `errores` si el formato o alguna celda no es válido; no guarda nada. Cada fila queda en la categoría Importado |
 | `GET /transacciones/exportar/:formato` | `finance.read` | `csv`, `excel` o `pdf`. Responde el archivo `movimientos.csv`, `movimientos.xlsx` o `movimientos.pdf` con los movimientos desde `1970-01-01` hasta hoy. Otro formato responde 400 |
 | `POST /transacciones` | `finance.write` | `tipo`, `monto`, `moneda`, `categoria`, `fecha`, `icono` opcional |
 | `PATCH /transacciones/:id` | `finance.write` | el mismo cuerpo |

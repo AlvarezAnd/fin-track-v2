@@ -86,11 +86,13 @@ describe('CategoryRepository', () => {
 
   it('finds, creates, and saves a category inside a transaction', async () => {
     const builder = query({ id: 1 });
+    const managerRepo = {
+      create: vi.fn((value) => value),
+      save: vi.fn(async (value) => ({ ...value, saved: true })),
+    };
     const manager = {
       createQueryBuilder: vi.fn(() => builder),
-      create: vi.fn((_entity, datos) => datos),
-      save: vi.fn(async (value) => value),
-      getRepository: vi.fn(() => ({ save: vi.fn(async (value) => ({ ...value, saved: true })) })),
+      getRepository: vi.fn(() => managerRepo),
     };
     const { repository: repo, categorias } = repository();
     const datos = {
@@ -106,8 +108,12 @@ describe('CategoryRepository', () => {
     ).resolves.toEqual({ id: 1 });
     expect(manager.createQueryBuilder).toHaveBeenCalledWith(Category, 'categoria');
 
-    await expect(repo.create(datos, manager as unknown as EntityManager)).resolves.toEqual(datos);
-    expect(manager.create).toHaveBeenCalledWith(Category, datos);
+    await expect(repo.create(datos, manager as unknown as EntityManager)).resolves.toEqual({
+      ...datos,
+      saved: true,
+    });
+    expect(manager.getRepository).toHaveBeenCalledWith(Category);
+    expect(managerRepo.create).toHaveBeenCalledWith(datos);
 
     const row = { id: 1 } as unknown as Category;
     await expect(repo.save(row)).resolves.toBe(row);
