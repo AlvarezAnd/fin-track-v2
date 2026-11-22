@@ -27,6 +27,7 @@ const inputClassName =
   "h-12 rounded-lg border border-black/10 bg-background px-3 text-base font-normal outline-none focus:border-foreground sm:h-11 dark:border-white/15";
 
 export const SIN_CATEGORIA = "Sin categoría";
+const NUEVA_CATEGORIA = "__nueva-categoria__";
 
 export type MovementDraft =
   | { mode: "create"; tipo: TipoMovimiento }
@@ -64,6 +65,7 @@ export function MovementDialog({
   const [categoria, setCategoria] = useState(
     editing ? draft.movimiento.categoria : SIN_CATEGORIA,
   );
+  const [nombreNueva, setNombreNueva] = useState("");
   const [fecha, setFecha] = useState(editing ? draft.movimiento.fecha : fechaLocal());
   const [icono, setIcono] = useState(editing ? draft.movimiento.icono : "etiqueta");
   const [categorias, setCategorias] = useState<Record<TipoMovimiento, CategoriaResumen[]>>({
@@ -73,7 +75,7 @@ export function MovementDialog({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const titulo = editing ? "Editar movimiento" : "Nuevo movimiento";
-  const sinCategoria = categoria === SIN_CATEGORIA;
+  const categoriaNueva = categoria === NUEVA_CATEGORIA;
   const opcionesCategoria = opcionesDe(categorias[tipo], editing ? draft.movimiento.categoria : null);
   const faltaCambio = cambiosCargados && moneda !== "USD" && cambios[moneda] == null;
 
@@ -126,7 +128,7 @@ export function MovementDialog({
   function chooseTipo(next: TipoMovimiento) {
     setTipo(next);
 
-    if (categoria === SIN_CATEGORIA) {
+    if (categoria === SIN_CATEGORIA || categoria === NUEVA_CATEGORIA) {
       return;
     }
 
@@ -143,7 +145,7 @@ export function MovementDialog({
   function chooseCategoria(value: string) {
     setCategoria(value);
 
-    if (value === SIN_CATEGORIA) {
+    if (value === SIN_CATEGORIA || value === NUEVA_CATEGORIA) {
       setIcono("etiqueta");
       return;
     }
@@ -156,6 +158,13 @@ export function MovementDialog({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const categoriaFinal = categoriaNueva ? nombreNueva.trim() : categoria;
+
+    if (!categoriaFinal || categoriaFinal.toLocaleLowerCase("es-AR") === SIN_CATEGORIA.toLocaleLowerCase("es-AR")) {
+      setError("Escribí un nombre para la nueva categoría.");
+      return;
+    }
+
     setPending(true);
     setError(null);
     if (faltaCambio) {
@@ -202,7 +211,7 @@ export function MovementDialog({
         body: JSON.stringify({
           tipo,
           monto,
-          categoria,
+          categoria: categoriaFinal,
           fecha,
           icono,
           moneda,
@@ -365,9 +374,28 @@ export function MovementDialog({
                   {item.nombre}
                 </option>
               ))}
+              <option value={NUEVA_CATEGORIA}>Nueva categoría…</option>
             </select>
           </label>
-          {sinCategoria ? (
+          {categoriaNueva ? (
+            <label className="flex flex-col gap-2 text-sm font-medium">
+              Nombre de la nueva categoría
+              <input
+                name="categoria-nueva"
+                type="text"
+                autoComplete="off"
+                required
+                autoFocus
+                maxLength={80}
+                disabled={pending}
+                placeholder="Ej.: Supermercado"
+                value={nombreNueva}
+                onChange={(event) => setNombreNueva(event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+          ) : null}
+          {categoriaNueva ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium">Icono</p>
               <IconPicker
