@@ -10,12 +10,15 @@ import { SearchIcon } from "@/components/icons/search-icon";
 import { UploadIcon } from "@/components/icons/upload-icon";
 import { LoadingScreen } from "@/components/loading-screen";
 import { MovementList } from "@/components/movement-list";
+import { Pagination } from "@/components/pagination";
 import { Section } from "@/components/section";
 import { Tabs } from "@/components/tabs";
 import { formatMoneda, monedaDe } from "@/lib/display";
 import { fechaLocal, movimientoCoincide, type Movimiento } from "@/lib/finance";
 
 type Filtro = "todo" | "ingreso" | "egreso";
+
+const POR_PAGINA = 10;
 
 export function MovementsPanel() {
   const router = useRouter();
@@ -28,6 +31,7 @@ export function MovementsPanel() {
   const [query, setQuery] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const [categoria, setCategoria] = useState("todas");
+  const [pagina, setPagina] = useState(1);
   const categorias = useMemo(() => {
     const seen = new Set<string>();
 
@@ -49,6 +53,10 @@ export function MovementsPanel() {
         `${movimiento.tipo}:${movimiento.categoria}` === categoria) &&
       movimientoCoincide(movimiento, query, formatMoneda(movimiento.monto, monedaDe(movimiento.moneda))),
   );
+
+  const totalPaginas = Math.max(1, Math.ceil(visibles.length / POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const deLaPagina = visibles.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA);
 
   useEffect(() => {
     let active = true;
@@ -175,7 +183,10 @@ export function MovementsPanel() {
             <SearchIcon />
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPagina(1);
+              }}
               placeholder="Buscar por categoría o monto..."
               className="w-full rounded-lg border border-neutral-200 bg-neutral-50/70 py-2 pr-3 pl-9 text-xs text-neutral-900 placeholder:text-neutral-400 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
             />
@@ -186,6 +197,7 @@ export function MovementsPanel() {
               value={filtro}
               onChange={(value) => {
                 setFiltro(value);
+                setPagina(1);
                 const otro = value === "ingreso" ? "egreso" : "ingreso";
 
                 if (value !== "todo" && categoria.startsWith(`${otro}:`)) {
@@ -202,7 +214,10 @@ export function MovementsPanel() {
           <div className="relative shrink-0">
             <select
               value={categoria}
-              onChange={(event) => setCategoria(event.target.value)}
+              onChange={(event) => {
+                setCategoria(event.target.value);
+                setPagina(1);
+              }}
               className="w-full cursor-pointer rounded-lg border border-neutral-200 bg-neutral-50/70 px-3 py-2 text-xs text-neutral-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden sm:w-auto dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
             >
               <option value="todas">Todas las categorías</option>
@@ -220,13 +235,14 @@ export function MovementsPanel() {
           </div>
         </div>
         <MovementList
-          movimientos={visibles}
+          movimientos={deLaPagina}
           empty={
             query || filtro !== "todo" || categoria !== "todas"
               ? "Ningún movimiento coincide con los filtros."
               : "Todavía no hay movimientos."
           }
         />
+        <Pagination pagina={paginaActual} totalPaginas={totalPaginas} onChange={setPagina} />
       </section>
       ) : null}
     </Section>
