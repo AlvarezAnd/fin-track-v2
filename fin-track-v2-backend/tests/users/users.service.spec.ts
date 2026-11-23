@@ -11,7 +11,7 @@ import type { Role } from '../../src/users/role.entity.js';
 import type { RolesRepository } from '../../src/users/roles.repository.js';
 import type { User } from '../../src/users/user.entity.js';
 import type { UsersRepository } from '../../src/users/users.repository.js';
-import { UsersService } from '../../src/users/users.service.js';
+import { DEFAULT_ADMIN_PASSWORD, UsersService } from '../../src/users/users.service.js';
 
 function role(code: string): Role {
   return { code, name: code, permissions: [] };
@@ -79,9 +79,9 @@ describe('UsersService', () => {
     expect(permissions.sync).not.toHaveBeenCalled();
   });
 
-  it('syncs access data and creates the initial admin', async () => {
+  it('syncs access data and creates the initial admin with a strong ADMIN_PASSWORD', async () => {
     vi.stubEnv('ADMIN_USERNAME', 'admin');
-    vi.stubEnv('ADMIN_PASSWORD', 'secret');
+    vi.stubEnv('ADMIN_PASSWORD', 'clave-segura-123');
     const adminRole = role('admin');
     const { service, users, roles, permissions, hasher } = serviceWith(true);
     permissions.findAll.mockResolvedValue([{ code: 'finance.read', name: 'Ver finanzas' }]);
@@ -97,50 +97,67 @@ describe('UsersService', () => {
       passwordHash: 'hashed',
       roles: [adminRole],
     });
-    expect(hasher.hash).toHaveBeenCalledWith('secret');
+    expect(hasher.hash).toHaveBeenCalledWith('clave-segura-123');
   });
 
-  it('updates the admin password and keeps the admin role', async () => {
+  it.each([undefined, 'admin', 'corta'])(
+    'creates the admin with the default password when ADMIN_PASSWORD is %s',
+    async (configured) => {
+      vi.stubEnv('ADMIN_USERNAME', 'admin');
+      vi.stubEnv('ADMIN_PASSWORD', configured as string);
+      const { service, users, roles, hasher } = serviceWith(true);
+      roles.findByCode.mockResolvedValue(role('admin'));
+      users.findByUsername.mockResolvedValue(null);
+
+      await service.onModuleInit();
+
+      expect(hasher.hash).toHaveBeenCalledWith(DEFAULT_ADMIN_PASSWORD);
+      expect(users.create).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('keeps the password of an existing admin and adds the admin role', async () => {
     vi.stubEnv('ADMIN_USERNAME', 'root');
-    vi.stubEnv('ADMIN_PASSWORD', 'secret');
+    vi.stubEnv('ADMIN_PASSWORD', 'clave-segura-123');
     const adminRole = role('admin');
-    const existing = user({ id: 1, username: 'old', roles: [role('viewer')] });
+    const existing = user({ id: 1, username: 'old', passwordHash: 'stored', roles: [role('viewer')] });
     const { service, users, roles, hasher } = serviceWith(true);
     roles.findByCode.mockResolvedValue(adminRole);
     users.findByUsername.mockResolvedValue(existing);
-    hasher.verify.mockRejectedValue(new Error('hash inválido'));
+    hasher.verify.mockResolvedValue(false);
 
     await service.onModuleInit();
 
     expect(existing.username).toBe('root');
-    expect(existing.passwordHash).toBe('hashed');
+    expect(existing.passwordHash).toBe('stored');
+    expect(hasher.hash).not.toHaveBeenCalled();
     expect(existing.roles.map((item) => item.code)).toEqual(['viewer', 'admin']);
     expect(users.save).toHaveBeenCalledWith(existing);
   });
 
-  it('leaves a matching admin password unchanged', async () => {
+  it('replaces an existing admin password that is still a generic one', async () => {
     vi.stubEnv('ADMIN_USERNAME', 'admin');
-    vi.stubEnv('ADMIN_PASSWORD', 'secret');
-    const existing = user({ id: 1, passwordHash: 'stored', roles: [role('admin')] });
+    vi.stubEnv('ADMIN_PASSWORD', 'admin');
+    const existing = user({ id: 1, passwordHash: 'del-admin', roles: [role('admin')] });
     const { service, users, roles, hasher } = serviceWith(true);
     roles.findByCode.mockResolvedValue(role('admin'));
     users.findByUsername.mockResolvedValue(existing);
+    hasher.verify.mockImplementation((async (plain: string) => plain === 'admin') as never);
 
     await service.onModuleInit();
 
-    expect(hasher.hash).not.toHaveBeenCalled();
-    expect(existing.passwordHash).toBe('stored');
+    expect(hasher.hash).toHaveBeenCalledWith(DEFAULT_ADMIN_PASSWORD);
+    expect(existing.passwordHash).toBe('hashed');
     expect(users.save).toHaveBeenCalledWith(existing);
   });
 
-  it('does nothing when the admin credentials or role are missing', async () => {
+  it('does nothing when the admin username or role is missing', async () => {
     const { service, users, roles } = serviceWith(true);
 
     await service.onModuleInit();
     expect(users.findByUsername).not.toHaveBeenCalled();
 
     vi.stubEnv('ADMIN_USERNAME', 'admin');
-    vi.stubEnv('ADMIN_PASSWORD', 'secret');
     roles.findByCode.mockResolvedValue(null);
     await service.onModuleInit();
     expect(users.create).not.toHaveBeenCalled();

@@ -20,6 +20,7 @@ import {
   parseIcon,
   parseMonth,
   parseAmount,
+  parseDetail,
   parseMoneda,
   parseRate,
   parseType,
@@ -48,6 +49,7 @@ type MovimientoBody = {
   fecha?: unknown;
   icono?: unknown;
   moneda?: unknown;
+  detalle?: unknown;
 };
 
 @Injectable()
@@ -427,6 +429,7 @@ export class FinanceService implements OnModuleInit {
           usuarioId,
           moneda: datos.moneda,
           cotizacion,
+          detalle: datos.detalle ?? null,
           categoria,
           tipo: tipoTransaction,
         },
@@ -463,6 +466,7 @@ export class FinanceService implements OnModuleInit {
       existente.fecha = datos.fecha;
       existente.moneda = datos.moneda;
       existente.cotizacion = cotizacion;
+      existente.detalle = datos.detalle ?? null;
       existente.tipo = tipoTransaction;
       existente.categoria = categoria;
 
@@ -493,6 +497,7 @@ export class FinanceService implements OnModuleInit {
     const fecha = body?.fecha == null ? currentDate() : parseDate(body.fecha);
     const icono = parseIcon(body?.icono);
     const moneda = parseMoneda(body?.moneda);
+    const detalle = parseDetail(body?.detalle);
 
     if (!tipo) {
       throw new BadRequestException('El tipo de transacción no es válido.');
@@ -518,7 +523,11 @@ export class FinanceService implements OnModuleInit {
       throw new BadRequestException('Indicá la moneda.');
     }
 
-    return { tipo, monto, categoriaNombre, fecha, icono, moneda };
+    if (detalle === null) {
+      throw new BadRequestException('El detalle puede tener hasta 200 caracteres.');
+    }
+
+    return { tipo, monto, categoriaNombre, fecha, icono, moneda, detalle };
   }
 
   private async requireRate(moneda: MonedaCodigo) {
@@ -645,6 +654,7 @@ function presentMovement(movimiento: Transaction, usd: number | null) {
     tipo: movimiento.tipo.codigo,
     categoria: movimiento.categoria.nombre,
     icono: movimiento.categoria.icono,
+    detalle: movimiento.detalle ?? null,
   };
 }
 

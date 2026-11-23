@@ -34,6 +34,7 @@ function movimiento(partial: Partial<Transaction> = {}): Transaction {
     usuarioId: 1,
     moneda: 'USD',
     cotizacion: 1,
+    detalle: null,
     creadoEn: new Date('2026-11-09T12:00:00Z'),
     categoria: categoria(),
     tipo: tipo(),
@@ -321,6 +322,7 @@ describe('FinanceService', () => {
           tipo: 'ingreso',
           categoria: 'Sueldo',
           icono: 'trabajo',
+          detalle: null,
         },
       ],
     });
@@ -378,6 +380,28 @@ describe('FinanceService', () => {
       categoria: 'Sueldo',
       icono: 'trabajo',
     });
+  });
+
+  it('stores the optional detail and rejects one that is too long', async () => {
+    const { service, tipos, categorias, transacciones } = serviceWith();
+    tipos.findByCode.mockResolvedValue(tipo());
+    categorias.findByKey.mockResolvedValue(categoria());
+    transacciones.create.mockImplementation(async (datos) => ({ id: 1, ...datos }));
+    const base = {
+      tipo: 'ingreso',
+      monto: '10',
+      categoria: 'Sueldo',
+      fecha: '2026-11-09',
+      moneda: 'USD',
+    };
+
+    await expect(service.create(1, { ...base, detalle: ' Aguinaldo ' })).resolves.toMatchObject({
+      detalle: 'Aguinaldo',
+    });
+    await expect(service.create(1, base)).resolves.toMatchObject({ detalle: null });
+    await expect(service.create(1, { ...base, detalle: 'x'.repeat(201) })).rejects.toThrow(
+      'El detalle puede tener hasta 200 caracteres.',
+    );
   });
 
   it('reuses a category and updates its icon when one is sent', async () => {

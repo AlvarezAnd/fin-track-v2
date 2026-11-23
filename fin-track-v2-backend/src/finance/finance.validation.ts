@@ -122,6 +122,27 @@ export function parseCategory(value: unknown): string | null {
   return name;
 }
 
+export const DETALLE_MAX = 200;
+
+/** Optional note: undefined/empty means none, null means invalid. */
+export function parseDetail(value: unknown): string | undefined | null {
+  if (value == null) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const text = value.trim();
+
+  if (!text) {
+    return undefined;
+  }
+
+  return text.length > DETALLE_MAX ? null : text;
+}
+
 export function parseDate(value: unknown): string | null {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;

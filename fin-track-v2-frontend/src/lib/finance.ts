@@ -17,6 +17,7 @@ export type Movimiento = {
   tipo: TipoMovimiento;
   categoria: string;
   icono: string;
+  detalle: string | null;
 };
 
 export type PanelFinanciero = {

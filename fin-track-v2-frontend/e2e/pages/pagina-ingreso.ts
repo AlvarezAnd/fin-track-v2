@@ -22,7 +22,7 @@ export class PaginaIngreso {
 
   async entrar(
     usuario = process.env.E2E_USERNAME ?? "admin",
-    contrasena = process.env.E2E_PASSWORD ?? "admin",
+    contrasena = process.env.E2E_PASSWORD ?? "iY2yRmHqpWRb",
   ) {
     await this.abrir();
     await this.usuario.fill(usuario);

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleInit,
   ServiceUnavailableException,
@@ -16,6 +17,8 @@ import { UsersRepository } from './users.repository.js';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly users: UsersRepository,
@@ -205,11 +208,15 @@ export class UsersService implements OnModuleInit {
     return roles;
   }
 
+  /**
+   * The admin always exists after a start, never with a generic password. A strong
+   * `ADMIN_PASSWORD` is used only when the user is created (or still has a generic
+   * password); otherwise `DEFAULT_ADMIN_PASSWORD` is used.
+   */
   private async ensureAdmin() {
     const username = adminUsername();
-    const password = process.env.ADMIN_PASSWORD;
 
-    if (!username || !password) {
+    if (!username) {
       return;
     }
 
@@ -224,23 +231,16 @@ export class UsersService implements OnModuleInit {
     if (!existing) {
       await this.users.create({
         username,
-        passwordHash: await this.hasher.hash(password),
+        passwordHash: await this.hasher.hash(this.initialAdminPassword()),
         roles: [adminRole],
       });
       return;
     }
 
     existing.username = username;
-    let matches = false;
 
-    try {
-      matches = await this.hasher.verify(password, existing.passwordHash);
-    } catch {
-      matches = false;
-    }
-
-    if (!matches) {
-      existing.passwordHash = await this.hasher.hash(password);
+    if (await this.hasGenericPassword(existing.passwordHash)) {
+      existing.passwordHash = await this.hasher.hash(this.initialAdminPassword());
     }
 
     if (!existing.roles.some((role) => role.code === 'admin')) {
@@ -249,6 +249,61 @@ export class UsersService implements OnModuleInit {
 
     await this.users.save(existing);
   }
+
+  private initialAdminPassword() {
+    const configured = process.env.ADMIN_PASSWORD;
+
+    if (configured && !isGenericPassword(configured)) {
+      return configured;
+    }
+
+    if (configured) {
+      this.logger.warn(
+        'ADMIN_PASSWORD es genérica o demasiado corta: se usa la contraseña por defecto del administrador.',
+      );
+    }
+
+    return DEFAULT_ADMIN_PASSWORD;
+  }
+
+  private async hasGenericPassword(hash: string) {
+    const candidates = new Set(GENERIC_PASSWORDS);
+    const configured = process.env.ADMIN_PASSWORD;
+
+    if (configured && isGenericPassword(configured)) {
+      candidates.add(configured);
+    }
+
+    for (const candidate of candidates) {
+      try {
+        if (await this.hasher.verify(candidate, hash)) {
+          return true;
+        }
+      } catch {
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
+
+/** Default password of the admin when `ADMIN_PASSWORD` is unset or generic. */
+export const DEFAULT_ADMIN_PASSWORD = 'iY2yRmHqpWRb';
+
+const GENERIC_PASSWORDS = [
+  'admin',
+  'administrator',
+  'password',
+  'changeme',
+  'secret',
+  'root',
+  '123456',
+  '12345678',
+];
+
+function isGenericPassword(value: string) {
+  return value.length < 8 || GENERIC_PASSWORDS.includes(value.toLowerCase());
 }
 
 function adminUsername() {

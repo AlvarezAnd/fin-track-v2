@@ -45,7 +45,7 @@ export class AuthController {
   @Post()
   @HttpCode(200)
   async issue(@Body() body: TokenBody) {
-    if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_USERNAME) {
       throw new ServiceUnavailableException('El acceso no está configurado.');
     }
 

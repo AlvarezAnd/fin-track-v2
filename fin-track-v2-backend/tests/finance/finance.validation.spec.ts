@@ -3,6 +3,7 @@ import {
   monthBounds,
   parseCategory,
   parseDate,
+  parseDetail,
   parseIcon,
   parseMonth,
   parseAmount,
@@ -23,6 +24,15 @@ describe('finance validation', () => {
     expect(parseAmount('1.250')).toBe(1250);
     expect(parseAmount('0')).toBeNull();
     expect(parseAmount('10.9999')).toBeNull();
+  });
+
+  it('parses an optional detail', () => {
+    expect(parseDetail(undefined)).toBeUndefined();
+    expect(parseDetail('   ')).toBeUndefined();
+    expect(parseDetail('  Compra del mes ')).toBe('Compra del mes');
+    expect(parseDetail('x'.repeat(200))).toBe('x'.repeat(200));
+    expect(parseDetail('x'.repeat(201))).toBeNull();
+    expect(parseDetail(5)).toBeNull();
   });
 
   it('normalizes a category and a calendar month', () => {

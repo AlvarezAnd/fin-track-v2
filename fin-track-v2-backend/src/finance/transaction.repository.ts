@@ -110,6 +110,7 @@ export class TransactionRepository {
       usuarioId: number;
       moneda: string;
       cotizacion: number;
+      detalle?: string | null;
       categoria: Category;
       tipo: TransactionType;
     },

@@ -8,7 +8,7 @@ La interfaz está en español y se usa en teléfono, tablet y escritorio. La tip
 
 - Entrar con un usuario y una contraseña.
 - Ver el balance del mes, y en tarjetas aparte el total de ingresos y el de egresos. El balance es ingresos menos egresos según la `fecha` del movimiento (cuándo ocurrió), no cuándo se cargó. El período puede ser este mes, el mes pasado o el año actual.
-- Registrar, editar o borrar un ingreso o un egreso indicando monto, moneda, categoría, fecha e icono. La moneda por defecto del alta es la de visualización del navegador. La categoría se elige de las ya cargadas, queda en Sin categoría (opción por defecto) o se crea con la opción Nueva categoría…, que pide el nombre; el icono solo se elige en ese último caso. Si la moneda no es el dólar y todavía no hay un cambio cargado, el administrador lo ingresa en el mismo formulario; el resto de los usuarios no puede guardar ese movimiento hasta que exista.
+- Registrar, editar o borrar un ingreso o un egreso indicando monto, moneda, categoría, fecha, icono y un detalle opcional (hasta 200 caracteres, visible en Ver). La moneda por defecto del alta es la de visualización del navegador. La categoría se elige de las ya cargadas, queda en Sin categoría (opción por defecto) o se crea con la opción Nueva categoría…, que pide el nombre; el icono solo se elige en ese último caso. Si la moneda no es el dólar y todavía no hay un cambio cargado, el administrador lo ingresa en el mismo formulario; el resto de los usuarios no puede guardar ese movimiento hasta que exista.
 - Consultar el historial. En el resumen se ven como máximo cinco movimientos, con un enlace a la página completa. En el teléfono y en el escritorio cada movimiento es una fila: icono, categoría, tipo, fecha, monto y las acciones de editar y borrar. En Movimientos se puede buscar por monto o categoría y filtrar por tipo y por categoría. Junto al título, Importar abre un cuadro para bajar un Excel de formato y subir los movimientos, Exportar descarga todos los movimientos hasta hoy en CSV, Excel o PDF, y Nuevo abre el alta.
 - Revisar las categorías. Junto al título hay un filtro de Todo, Egresos e Ingresos, y el botón Crear categoría (nombre, tipo e icono vía `POST /categorias`). Se puede cambiar el nombre y el icono, o borrar la categoría si no tiene movimientos. Un icono de ingreso se muestra en verde.
 - Preguntar en lenguaje natural desde el asistente de la esquina inferior derecha. El modelo arma un reporte de totales en dólares, por categoría o por mes, de los últimos 24 meses como máximo, y la ventana lo muestra en markdown. Al proveedor solo llegan esos totales, nunca cada movimiento. Si el modelo no está configurado o no responde, el asistente sigue contestando el balance, los ingresos, los egresos, las categorías y los últimos movimientos del mes actual o del mes pasado.
@@ -20,7 +20,7 @@ En escritorio la navegación va en un sidebar a la izquierda (Resumen, Movimient
 
 ## Usuarios, roles y permisos
 
-El acceso lo decide el backend. Al arrancar con la base conectada crea, si todavía no existe, el usuario de `ADMIN_USERNAME` y `ADMIN_PASSWORD` con el rol `admin`. La base le asigna un id numérico. La contraseña se guarda hasheada. Si la del entorno cambia, el arranque actualiza el hash.
+El acceso lo decide el backend. Al arrancar con la base conectada crea, si todavía no existe, el usuario de `ADMIN_USERNAME` con el rol `admin`, siempre con una contraseña no genérica: la de `ADMIN_PASSWORD` si es válida (8 caracteres o más y no `admin`, `password`, etc.) o, si falta o es genérica, la contraseña por defecto `iY2yRmHqpWRb` (la misma que usan los e2e). Un admin que todavía tenga una contraseña genérica pasa a esa en el próximo arranque. Una contraseña ya cambiada no se pisa. La base le asigna un id numérico y la guarda hasheada.
 
 Roles:
 
@@ -104,7 +104,7 @@ El frontend lee `BACKEND_URL`. En local apunta a `http://localhost:3001`.
 
 El backend lee:
 
-- `ADMIN_USERNAME` y `ADMIN_PASSWORD`, el administrador inicial.
+- `ADMIN_USERNAME`, el administrador inicial, y `ADMIN_PASSWORD` (si falta o es genérica, se usa la contraseña por defecto).
 - `JWT_SECRET`, de al menos 32 bytes, para firmar el access token.
 - `CORS_ORIGIN`, orígenes del navegador permitidos para la API (separados por coma). Por defecto `http://localhost:3010`.
 - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD` y `DATABASE_NAME`.

@@ -65,6 +65,7 @@ export function MovementDialog({
   const [categoria, setCategoria] = useState(
     editing ? draft.movimiento.categoria : SIN_CATEGORIA,
   );
+  const [detalle, setDetalle] = useState(editing ? (draft.movimiento.detalle ?? "") : "");
   const [nombreNueva, setNombreNueva] = useState("");
   const [fecha, setFecha] = useState(editing ? draft.movimiento.fecha : fechaLocal());
   const [icono, setIcono] = useState(editing ? draft.movimiento.icono : "etiqueta");
@@ -215,6 +216,7 @@ export function MovementDialog({
           fecha,
           icono,
           moneda,
+          detalle: detalle.trim(),
         }),
       });
       const body = (await response.json().catch(() => null)) as {
@@ -405,6 +407,19 @@ export function MovementDialog({
               />
             </div>
           ) : null}
+          <label className="flex flex-col gap-2 text-sm font-medium">
+            Detalle <span className="font-normal text-zinc-500 dark:text-zinc-400">(opcional)</span>
+            <textarea
+              name="detalle"
+              rows={2}
+              maxLength={200}
+              disabled={pending}
+              placeholder="Ej.: Compra del mes"
+              value={detalle}
+              onChange={(event) => setDetalle(event.target.value)}
+              className="rounded-lg border border-black/10 bg-background px-3 py-2 text-base font-normal outline-none focus:border-foreground dark:border-white/15"
+            />
+          </label>
           {error ? (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">
               {error}

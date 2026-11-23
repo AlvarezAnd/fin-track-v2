@@ -39,6 +39,9 @@ export class Transaction {
   @Column({ type: 'numeric', precision: 14, scale: 4, nullable: true, transformer: rate })
   cotizacion: number | null;
 
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  detalle: string | null;
+
   @CreateDateColumn({ name: 'creado_en', type: 'timestamptz' })
   creadoEn: Date;
 

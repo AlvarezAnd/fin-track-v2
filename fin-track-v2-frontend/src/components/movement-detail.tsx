@@ -71,6 +71,12 @@ export function MovementDetail({
               {formatMoneda(movimiento.monto, monedaDe(movimiento.moneda))}
             </dd>
           </div>
+          {movimiento.detalle ? (
+            <div className="flex justify-between gap-3">
+              <dt className="text-neutral-500 dark:text-neutral-400">Detalle</dt>
+              <dd className="max-w-[70%] break-words text-right font-medium">{movimiento.detalle}</dd>
+            </div>
+          ) : null}
         </dl>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="egreso" onClick={onClose}>

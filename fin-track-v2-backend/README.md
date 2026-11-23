@@ -21,7 +21,7 @@ Con el proceso en marcha, la documentación OpenAPI (Swagger UI) está en `/api`
 
 ## Variables
 
-- `ADMIN_USERNAME` y `ADMIN_PASSWORD`: administrador inicial. Con la base conectada se guarda con un id numérico y el rol `admin`.
+- `ADMIN_USERNAME`: administrador inicial. `ADMIN_PASSWORD` solo se usa si tiene 8 caracteres o más y no es genérica (`admin`, `password`…); si falta o es genérica, el admin recibe la contraseña por defecto `iY2yRmHqpWRb` (`DEFAULT_ADMIN_PASSWORD`). Con la base conectada se guarda con un id numérico y el rol `admin`.
 - `JWT_SECRET`: al menos 32 bytes.
 - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`.
 - `CORS_ORIGIN`: orígenes del navegador permitidos para llamar a la API (lista separada por comas: esquema + host + puerto). Sin la variable, solo `http://localhost:3010`. No afecta a clientes sin navegador ni a llamadas same-origin.
